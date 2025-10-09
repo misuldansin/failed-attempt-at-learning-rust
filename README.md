@@ -1,6 +1,12 @@
 # bog-engine
 
+## Description
+
 A real-time cellular automation/falling sand physics simulation built in pure JavaScript.
+
+## License
+
+Bog-engine is licensed under the [MIT](https://github.com/misuldansin/bog-engine/blob/main/LICENSE) License.
 
 ## Assets and Attribution
 

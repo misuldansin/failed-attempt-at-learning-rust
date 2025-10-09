@@ -1,40 +1,53 @@
-export class Color {
-  rgba = new Uint8ClampedArray(4);
+export const Color = {
+  hexToRGBA(hex) {
+    if (!hex) return new Uint8ClampedArray([0, 0, 0, 255]);
+    const h = hex.replace("#", "");
+    const bigint = parseInt(h.length === 6 ? h + "FF" : h, 16);
+    return new Uint8ClampedArray([(bigint >> 24) & 255, (bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255]);
+  },
+  RGBAToHex(rgba) {
+    const [r, g, b, a = 255] = rgba;
+    const toHex = (v) => v.toString(16).padStart(2, "0");
 
-  constructor(hexStr, alpha = 255) {
-    const [r, g, b] = this.hexToRGB(hexStr);
-
-    this.rgba[0] = r;
-    this.rgba[1] = g;
-    this.rgba[2] = b;
-    this.rgba[3] = alpha;
-  }
-  get r() {
-    return this.rgba[0];
-  }
-  get g() {
-    return this.rgba[1];
-  }
-  get b() {
-    return this.rgba[2];
-  }
-  get a() {
-    return this.rgba[3];
-  }
-  hexToRGB(hexStr) {
-    // Return black for not correctly encoded hex
-    if (!hexStr) return [0, 0, 0];
-
-    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-    hexStr = hexStr.replace(shorthandRegex, function (m, r, g, b) {
-      return r + r + g + g + b + b;
-    });
-    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hexStr);
-    return result ? [parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)] : [0, 0, 0];
-  }
-  clone() {
-    const newColor = new Color("#000000");
-    newColor.rgba.set(this.rgba);
-    return newColor;
-  }
-}
+    if (a === 255) {
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}`.toUpperCase();
+    } else {
+      return `#${toHex(r)}${toHex(g)}${toHex(b)}${toHex(a)}`.toUpperCase();
+    }
+  },
+  colorBetween(start, end, t) {
+    const dr = end[0] - start[0];
+    const dg = end[1] - start[1];
+    const db = end[2] - start[2];
+    const da = end[3] - start[3];
+    return new Uint8ClampedArray([start[0] + dr * t, start[1] + dg * t, start[2] + db * t, start[3] + da * t]);
+  },
+  generateGradient(start, end, resolution = 6) {
+    const dr = end[0] - start[0];
+    const dg = end[1] - start[1];
+    const db = end[2] - start[2];
+    const da = end[3] - start[3];
+    const step = 1 / (resolution - 1);
+    const colors = new Array(resolution);
+    for (let i = 0; i < resolution; i++) {
+      const t = i * step;
+      colors[i] = new Uint8ClampedArray([start[0] + dr * t, start[1] + dg * t, start[2] + db * t, start[3] + da * t]);
+    }
+    return colors;
+  },
+  pickContrastColor(baseColor, lightColor = [255, 255, 255, 255], darkColor = [50, 50, 56, 255]) {
+    const r = baseColor[0];
+    const g = baseColor[1];
+    const b = baseColor[2];
+    const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+    return luminance < 210 ? lightColor : darkColor;
+  },
+  invertColor(rgba) {
+    return {
+      r: 255 - rgba.r,
+      g: 255 - rgba.g,
+      b: 255 - rgba.b,
+      a: 255 - rgba.a,
+    };
+  },
+};

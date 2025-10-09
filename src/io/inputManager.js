@@ -1,5 +1,6 @@
 import { CATEGORY, CATEGORY_DATA, PARTICLE, PARTICLE_DATA } from "../structs/data.js";
 import { Renderer } from "../io/renderer.js";
+import { Color } from "../structs/color.js";
 
 export class InputManager {
   // Dependencies
@@ -51,11 +52,7 @@ export class InputManager {
     if (this.#isMouseDown) {
       const x = mousePosition.x;
       const y = mousePosition.y;
-      const brushSize = this.#currentBrushSize;
-      const particleData = PARTICLE_DATA[this.#selectedParticle];
-      const concentration = this.#currentConcentration;
-
-      grid.fillCircleAt(x, y, brushSize, particleData, concentration);
+      grid.fillCircleAt(x, y, this.#currentBrushSize, this.#selectedParticle, this.#currentConcentration);
     }
 
     // Change brush size
@@ -122,7 +119,17 @@ export class InputManager {
       const newButton = document.createElement("button");
       newButton.className = "particle-button";
       newButton.textContent = particle.NAME;
-      newButton.style.backgroundColor = particle.COLOR;
+
+      // Apply background and text colors
+      const particleBaseColor = particle.COLOR_BASE;
+      const particleVariantColor = particle.COLOR_VARIANT;
+      const particleTextColor = Color.pickContrastColor(Color.hexToRGBA(particleBaseColor));
+      const inverseShadowColor = Color.invertColor(particleTextColor);
+
+      newButton.style.setProperty("--particle-button-base-color", particleBaseColor);
+      newButton.style.setProperty("--particle-button-variant-color", particleVariantColor);
+      newButton.style.color = Color.RGBAToHex(particleTextColor);
+      newButton.style.textShadow = `1px 1px 2px rgba(${inverseShadowColor.r}, ${inverseShadowColor.g}, ${inverseShadowColor.b}, 0.6)`;
 
       // Add datasets and append it to particle button container
       newButton.dataset.particleId = particle.ID;
@@ -203,12 +210,8 @@ export class InputManager {
 
     const width = this.#renderer.renderWidth;
     const height = this.#renderer.renderHeight;
-
     const offsets = [-1, 1];
 
-    const calculateIndex = (x, y) => {
-      return y * this.#renderer.renderWidth + x;
-    };
     const plotOctets = (x, y) => {
       for (const bigY of offsets) {
         for (const bigX of offsets) {

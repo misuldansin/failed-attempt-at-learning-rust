@@ -46,7 +46,7 @@ export class Engine {
     this.#gameHeight = gameHeight;
     this.#currentGrid = new Grid(this.#gameWidth, this.#gameHeight);
 
-    this.#populateGrid(PARTICLE_DATA[PARTICLE.EMPTY]);
+    this.#currentGrid.populateGrid(PARTICLE.EMPTY);
   }
   start() {
     if (!this.#isRunning) {
@@ -83,7 +83,7 @@ export class Engine {
       this.#renderer.queueParticles(this.#currentGrid.dirtyParticles, true, { r: 238, g: 148, b: 210, a: 220 });
 
       // Step 3. clear any game data related to this frame
-      this.#currentGrid.clearDirtyParticles();
+      this.#currentGrid.clearDirty();
 
       this.#tickCount++;
       this.#lastPhysicsTime = timestamp;
@@ -109,16 +109,7 @@ export class Engine {
 
     this.#animationFrameId = requestAnimationFrame(this.#gameLoop);
   };
-  #populateGrid(particleData) {
-    const gridWidth = this.#currentGrid.width;
-    const gridHeight = this.#currentGrid.height;
 
-    for (let y = 0; y < gridHeight; y++) {
-      for (let x = 0; x < gridWidth; x++) {
-        this.#currentGrid.createParticleAt(x, y, particleData, true);
-      }
-    }
-  }
   #stepPhysics() {
     // // Store dirty particles of the previous frame to update this frame
     // let particlesToUpdate = Array.from(this.#currentGrid.dirtyParticles);

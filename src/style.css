@@ -24,7 +24,9 @@
   --category-bar-min-width: 140px;
   --category-bar-height: 24px;
 
-  --particle-button-min-width: 40px;
+  --particle-button-base-color: #2c2c2c;
+  --particle-button-variant-color: #1e1e1e;
+  --particle-button-min-width: 48px;
   --particle-button-height: 22px;
   --particle-button-border-radius: 6px;
   --particle-button-margin: 3px;
@@ -194,7 +196,7 @@ body {
 }
 
 .particle-button {
-  background-color: #555;
+  background: linear-gradient(90deg, var(--particle-button-base-color), var(--particle-button-variant-color));
   color: white;
 
   min-width: var(--particle-button-min-width);
@@ -215,9 +217,17 @@ body {
   text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.3);
   transition: outline 0.1s ease-in-out;
 }
+.particle-button:hover {
+  transform: translateY(-1.5px);
+  box-shadow: 0px 3px 5px rgba(0.2, 0.2, 0.2, 0.2);
+}
 .particle-button.selected {
   outline: var(--particle-button-selection-outline-width) solid var(--particle-button-selection-outline-color);
   outline-offset: -2px;
+
+  transform: scale(1.08);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2;
 }
 
 /* Style for the debug container */

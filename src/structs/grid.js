@@ -1,4 +1,4 @@
-import { CATEGORY, PARTICLE } from "../structs/data.js";
+import { CATEGORY, PARTICLE, PARTICLE_DATA } from "../structs/data.js";
 import { Color } from "../structs/color.js";
 
 export class Grid {
@@ -6,6 +6,16 @@ export class Grid {
   height;
   #data;
   #dirtyParticles;
+  NEIGHBOR = {
+    TOP_LEFT: { dx: -1, dy: -1 },
+    TOP_MIDDLE: { dx: 0, dy: -1 },
+    TOP_RIGHT: { dx: 1, dy: -1 },
+    LEFT: { dx: -1, dy: 0 },
+    RIGHT: { dx: 1, dy: 0 },
+    DOWN_LEFT: { dx: -1, dy: 1 },
+    DOWN_MIDDLE: { dx: 0, dy: 1 },
+    DOWN_RIGHT: { dx: 1, dy: 1 },
+  };
 
   constructor(width, height, dataOverride = null) {
     this.width = width;
@@ -19,19 +29,24 @@ export class Grid {
   get dirtyParticles() {
     return this.#dirtyParticles;
   }
+  isInBounds(x, y) {
+    return x >= 0 && x < this.width && y >= 0 && y < this.height;
+  }
+  clearDirty() {
+    this.#dirtyParticles.clear();
+  }
+  #createNewParticle(particleData) {
+    // Generate a random color for this particle between the particle's base and variant colors
+    const baseColor = Color.hexToRGBA(particleData.COLOR_BASE);
+    const variantColor = Color.hexToRGBA(particleData.COLOR_VARIANT);
+    const newColor = Color.colorBetween(baseColor, variantColor, Math.random());
 
-  //
-  createParticleAt(x, y, particleData, markAsDirty = false, markNeighborsAsDirty = false) {
-    if (!this.isInBounds(x, y) || !particleData) return false;
-
-    // PARTICLE FACTORY!!!!!!!!!!
-    // ..We create a new particle object...
     let newParticle = {
       id: particleData.ID,
       name: particleData.NAME,
-      color: new Color(particleData.COLOR),
-      position: { x: x, y: y },
-      index: y * this.width + x,
+      color: newColor,
+      position: null,
+      index: 0,
       category: particleData.CATEGORY,
       isMovable: particleData.ISMOVABLE,
       density: particleData.DENSITY,
@@ -56,26 +71,37 @@ export class Grid {
       default:
         console.log("Error: None implemented category type:" + newParticle);
     }
-    // ..Prob should make a separate Factory function...
 
-    // Add it to grid data
+    return newParticle;
+  }
+  populateGrid(particleId) {
+    const gridWidth = this.width;
+    const gridHeight = this.height;
+
+    for (let y = 0; y < gridHeight; y++) {
+      for (let x = 0; x < gridWidth; x++) {
+        this.createParticleAt(x, y, particleId, true);
+      }
+    }
+  }
+
+  createParticleAt(x, y, particleId, markAsDirty = false, markNeighborsAsDirty = false) {
+    // Don't create a particle if the given location and the particle id is invalid
+    if (!this.isInBounds(x, y) || !particleId) return false;
+
+    // Create a new particle and assign it's position in the grid
+    let newParticle = this.#createNewParticle(PARTICLE_DATA[particleId]);
+    newParticle.position = { x: x, y: y };
+    newParticle.index = y * this.width + x;
+
+    // Add the newly created particle to the grid
     this.#data[y * this.width + x] = newParticle;
 
-    // Dirty cell handling
+    // Handle dirty particles
     if (markAsDirty) {
-      // Add it's neighbors as well
+      // Add the neighboring particles too
       if (markNeighborsAsDirty) {
-        const offsets = [
-          { dx: -1, dy: -1 },
-          { dx: 0, dy: -1 },
-          { dx: 1, dy: -1 },
-          { dx: -1, dy: 0 },
-          { dx: 1, dy: 0 },
-          { dx: -1, dy: 1 },
-          { dx: 0, dy: 1 },
-          { dx: 1, dy: 1 },
-        ];
-        const newParticleNeighbors = this.getValidNeighborParticles(newParticle, offsets);
+        const newParticleNeighbors = this.getValidNeighborParticles(newParticle, this.NEIGHBOR);
         if (newParticleNeighbors) {
           for (const neighbor of newParticleNeighbors) this.#dirtyParticles.add(neighbor);
         }
@@ -84,8 +110,6 @@ export class Grid {
       this.#dirtyParticles.add(newParticle);
     }
   }
-
-  //
   getParticleAt(x, y) {
     if (!this.isInBounds(x, y)) return null;
     return this.#data[y * this.width + x];
@@ -104,7 +128,8 @@ export class Grid {
     let neighbors = [];
     if (!particle) return neighbors;
 
-    for (const offset of offsets) {
+    for (const key in offsets) {
+      const offset = offsets[key];
       const neighborX = particle.position.x + offset.dx;
       const neighborY = particle.position.y + offset.dy;
       const neighbor = this.getParticleAt(neighborX, neighborY);
@@ -123,8 +148,8 @@ export class Grid {
   }
 
   // Function to draw a circle of particles in the grid
-  fillCircleAt(x, y, radius, particleDataToFill, concentrationOverride = 1) {
-    concentrationOverride = concentrationOverride > 0 ? concentrationOverride : 1;
+  fillCircleAt(x, y, radius, particleId, concentrationOverride = 1) {
+    const newConcentration = concentrationOverride > 0 ? concentrationOverride : 1;
 
     for (let i = -radius; i <= radius; i++) {
       for (let j = -radius; j <= radius; j++) {
@@ -136,25 +161,18 @@ export class Grid {
           if (px >= 0 && px < this.width && py >= 0 && py < this.height) {
             const prevParticle = this.getParticleAt(px, py);
 
-            const prevParticleCheck = prevParticle === null || prevParticle.id === PARTICLE.EMPTY;
-            const newParticleCheck =
-              particleDataToFill.ID === PARTICLE.EMPTY || particleDataToFill.ID === prevParticle.id;
-
-            if (prevParticleCheck || newParticleCheck) {
-              this.createParticleAt(px, py, particleDataToFill, true, true);
-              this.getParticleAt(px, py).concentration = concentrationOverride;
+            if (
+              prevParticle === null ||
+              prevParticle.id === PARTICLE.EMPTY ||
+              particleId === PARTICLE.EMPTY ||
+              particleId === prevParticle.id
+            ) {
+              this.createParticleAt(px, py, particleId, true, true);
+              this.getParticleAt(px, py).concentration = newConcentration;
             }
           }
         }
       }
     }
-  }
-
-  clearDirtyParticles() {
-    this.#dirtyParticles.clear();
-  }
-
-  isInBounds(x, y) {
-    return x >= 0 && x < this.width && y >= 0 && y < this.height;
   }
 }

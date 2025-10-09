@@ -55,7 +55,7 @@ export class Renderer {
 
     // Step 2. add overlay data
     let finalPixelBuffer = new Uint8ClampedArray(this.#pixelBuffer);
-    this.#addOverlayPixels(this.#queuedOverlayPixels, finalPixelBuffer);
+    //this.#addOverlayPixels(this.#queuedOverlayPixels, finalPixelBuffer);
 
     // Step 3. render the final result
     this.#drawGrid(finalPixelBuffer);
@@ -75,10 +75,10 @@ export class Renderer {
     for (const particle of particlesToProcess) {
       const index = particle.index;
       let pixelColor = this.#getParticleFinalColor(particle);
-      this.#pixelBuffer[index * 4 + 0] = pixelColor.r; // red
-      this.#pixelBuffer[index * 4 + 1] = pixelColor.g; // green
-      this.#pixelBuffer[index * 4 + 2] = pixelColor.b; // blue
-      this.#pixelBuffer[index * 4 + 3] = pixelColor.a; // alpha
+      this.#pixelBuffer[index * 4 + 0] = pixelColor[0]; // red
+      this.#pixelBuffer[index * 4 + 1] = pixelColor[1]; // green
+      this.#pixelBuffer[index * 4 + 2] = pixelColor[2]; // blue
+      this.#pixelBuffer[index * 4 + 3] = pixelColor[3]; // alpha
     }
   }
   #addOverlayPixels(overlayPixels, pixelBufferToOverride) {
@@ -122,17 +122,17 @@ export class Renderer {
   }
   // Calculate final pixel color for the given particle reference
   #getParticleFinalColor(particle) {
-    if (!particle) return new Color("#000000"); // return black color if particle is null
+    // return black color if particle is null
+    if (!particle) return new Uint8ClampedArray([0, 0, 0, 255]);
 
-    let particleColor = new Color(null);
-    particleColor.rgba.set(particle.color.rgba);
+    let particleFinalColor = new Uint8ClampedArray(particle.color);
 
     // Override particle color based on it's category
     switch (particle.category) {
       case CATEGORY.SOLID:
         break;
       case CATEGORY.LIQUID:
-        this.#processConcentrationColor(particleColor, particle.concentration, particle.maxConcentration);
+        //this.#processConcentrationColor(particleFinalColor, particle.concentration, particle.maxConcentration);
         break;
       case CATEGORY.GAS:
         break;
@@ -144,20 +144,18 @@ export class Renderer {
         break;
     }
 
-    return particleColor;
+    return particleFinalColor;
   }
   #processConcentrationColor(color, Concentration, maxConcentration, darknessMultiplier = 0.5) {
-    const darkeningFactor = (Concentration / maxConcentration) * darknessMultiplier;
-    const r = color.r;
-    const g = color.g;
-    const b = color.b;
-
-    const newR = Math.max(0, r - Math.floor(r * darkeningFactor));
-    const newG = Math.max(0, g - Math.floor(g * darkeningFactor));
-    const newB = Math.max(0, b - Math.floor(b * darkeningFactor));
-
-    color.rgba[0] = newR;
-    color.rgba[1] = newG;
-    color.rgba[2] = newB;
+    const darkeningFactor = (Concentration / (maxConcentration - 1)) * darknessMultiplier;
+    const r = color[0];
+    const g = color[1];
+    const b = color[2];
+    const newR = r - r * darkeningFactor;
+    const newG = g - g * darkeningFactor;
+    const newB = b - b * darkeningFactor;
+    color[0] = newR;
+    color[1] = newG;
+    color[2] = newB;
   }
 }
