@@ -1,5 +1,5 @@
 import { Renderer } from "./src/io/renderer.js";
-import { Engine } from "./src/core/Engine.js";
+import { Engine } from "./src/core/engine.js";
 import { InputManager } from "./src/io/inputManager.js";
 import { Settings } from "./src/settings.js";
 import { Debug } from "./src/io/debug.js";
