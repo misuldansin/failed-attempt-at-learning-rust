@@ -199,26 +199,39 @@ export class InputManager {
     const r = 227;
     const g = 227;
     const b = 227;
-    const a = 175;
+    const a = 180;
+
+    const width = this.#renderer.renderWidth;
+    const height = this.#renderer.renderHeight;
+
+    const offsets = [-1, 1];
 
     const calculateIndex = (x, y) => {
       return y * this.#renderer.renderWidth + x;
     };
     const plotOctets = (x, y) => {
-      pixels.push({ index: calculateIndex(centerX + x, centerY + y), r: r, g: g, b: b, a: a });
-      pixels.push({ index: calculateIndex(centerX - x, centerY + y), r: r, g: g, b: b, a: a });
-      pixels.push({ index: calculateIndex(centerX + x, centerY - y), r: r, g: g, b: b, a: a });
-      pixels.push({ index: calculateIndex(centerX - x, centerY - y), r: r, g: g, b: b, a: a });
+      for (const bigY of offsets) {
+        for (const bigX of offsets) {
+          const newX = centerX + x * bigX;
+          const newY = centerY + y * bigY;
+          const newx = centerX + y * bigX;
+          const newy = centerY + x * bigY;
 
-      pixels.push({ index: calculateIndex(centerX + y, centerY + x), r: r, g: g, b: b, a: a });
-      pixels.push({ index: calculateIndex(centerX - y, centerY + x), r: r, g: g, b: b, a: a });
-      pixels.push({ index: calculateIndex(centerX + y, centerY - x), r: r, g: g, b: b, a: a });
-      pixels.push({ index: calculateIndex(centerX - y, centerY - x), r: r, g: g, b: b, a: a });
+          if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
+            const index = newY * width + newX;
+            pixels.push({ index: index, r: r, g: g, b: b, a: a });
+          }
+          if (newx >= 0 && newx < width && newy >= 0 && newy < height) {
+            const index = newy * width + newx;
+            pixels.push({ index: index, r: r, g: g, b: b, a: a });
+          }
+        }
+      }
     };
 
     let x = radius;
     let y = 0;
-    let P = 1 - radius;
+    let P = radius - radius;
 
     plotOctets(x, y);
 
