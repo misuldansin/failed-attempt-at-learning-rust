@@ -1,4 +1,3 @@
-import { Engine } from "../core/Engine.js";
 import { CATEGORY, CATEGORY_DATA, PARTICLE, PARTICLE_DATA } from "../structs/data.js";
 import { Renderer } from "../io/renderer.js";
 
