@@ -5,7 +5,7 @@ export class Debug {
   #isOverlayEnabled;
   constructor(containerToAttachDebug, isEnabled = false) {
     this.#isEnabled = isEnabled;
-    this.#isOverlayEnabled = true;
+    this.#isOverlayEnabled = false;
     this.#initDebug(containerToAttachDebug);
   }
   get isEnabled() {

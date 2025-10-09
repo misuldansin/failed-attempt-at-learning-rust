@@ -3,33 +3,39 @@ import { Renderer } from "../io/renderer.js";
 import { Color } from "../structs/color.js";
 
 export class InputManager {
-  // Dependencies
-  #renderer;
-  #canvas = document.getElementById("main-canvas");
-  // Defaults
+  // Default settings
   #brushSizeSensitivity = 0.02;
   #maxBrushSize = 16;
-  // States
+
+  // Dependencies and DOM elements
+  #renderer;
+  #canvas = document.getElementById("main-canvas");
+  #selectedParticleButton;
+  #selectedCategoryButton;
+
+  // Input / Output states
+  isPainting = false;
+  isErasing = false;
+  latestMouseCoords = { x: 0, y: 0 };
+  shouldChangeBrushSize = false;
+  changeBrushSizeDir = 0;
+  #activePointerId = null;
+  #activeButton = null;
+
+  // Variables
+  #selectedParticle = parseInt(PARTICLE.SAND); // The default selected particle
+  #selectedCategory = parseInt(CATEGORY.SAND);
   #currentBrushSize = 4;
   #currentSpeed = 25;
   #currentPressure = 0;
   #currentConcentration = 1;
-  #selectedParticle = parseInt(PARTICLE.SAND); // The default selected particle
-  #selectedCategory = parseInt(CATEGORY.SAND);
-  // UI element refs
-  #selectedParticleButton;
-  #selectedCategoryButton;
-  // Event handler flags
-  #latestMouseCoords = { x: 0, y: 0 };
-  #isMouseDown = false;
-  #shouldChangeBrushSize = false;
-  #changeBrushSizeDir = 0.0;
 
   constructor(rendererInstance) {
     if (!(rendererInstance instanceof Renderer)) {
       throw new Error("InputManager constructor requires valid instances!");
     }
     this.#renderer = rendererInstance;
+
     // Initialize UI elements
     this.#initCategoryButtons();
     this.#initParticleButtons();
@@ -39,26 +45,26 @@ export class InputManager {
     this.#updateParticlePalette(this.#selectedCategoryButton);
   }
 
-  processUIThisFrame(grid) {
-    // Handle UI rendering
-    const mousePosition = this.#getMousePositionOnGrid();
-
+  processInput(grid, renderer) {
+    // --- Handle UI rendering ---
+    const mousePosition = { x: Math.floor(this.latestMouseCoords.x), y: Math.floor(this.latestMouseCoords.y) };
     const brushOutlineOverlay = this.#calculateBrushOutline(mousePosition.x, mousePosition.y);
-    this.#renderer.queueOverlayPixels(brushOutlineOverlay);
+    renderer.queueOverlayPixels(brushOutlineOverlay);
 
-    // Handle update UI
+    // --- Handle input ---
 
     // Paint particles
-    if (this.#isMouseDown) {
+    if (this.isPainting || this.isErasing) {
       const x = mousePosition.x;
       const y = mousePosition.y;
-      grid.fillCircleAt(x, y, this.#currentBrushSize, this.#selectedParticle, this.#currentConcentration);
+      const particleId = this.isPainting ? this.#selectedParticle : PARTICLE.EMPTY;
+      grid.fillCircleAt(x, y, this.#currentBrushSize, particleId, this.#currentConcentration);
     }
 
     // Change brush size
-    if (this.#shouldChangeBrushSize) {
+    if (this.shouldChangeBrushSize) {
       // Calculate new brush size
-      const scrollDelta = this.#changeBrushSizeDir * this.#brushSizeSensitivity;
+      const scrollDelta = this.changeBrushSizeDir * this.#brushSizeSensitivity;
       let newSize = this.#currentBrushSize - scrollDelta;
       // Clamp it between 0 and max brush size
       newSize = Math.floor(newSize);
@@ -66,8 +72,7 @@ export class InputManager {
       newSize = Math.max(0, newSize);
       // Set the new brush size
       this.#currentBrushSize = newSize;
-
-      this.#changeBrushSizeDir = 0;
+      this.changeBrushSizeDir = 0;
     }
   }
 
@@ -149,14 +154,25 @@ export class InputManager {
     const particleCategoryBar = document.getElementById("particle-category-bar");
     const particleButtonContainer = document.getElementById("particle-button-container");
 
-    // Update UI elements
-    // ..
+    // Pointer events (mouse, touch, and stylus)
+    canvas.addEventListener("pointerdown", this.#onPointerDown);
+    canvas.addEventListener("pointermove", this.#onPointerMove);
+    canvas.addEventListener("pointerup", this.#onPointerUp);
+    canvas.addEventListener("pointercancel", this.#onPointerCancel);
+    canvas.addEventListener("lostpointercapture", this.#onPointerCancel);
 
-    // Add event listerners
-    canvas.addEventListener("mousedown", this.#handleCanvasMouseDown);
-    canvas.addEventListener("mouseup", this.#handleCanvasMouseUp);
-    canvas.addEventListener("mousemove", this.#handleCanvasMouseMove);
-    canvas.addEventListener("wheel", this.#handleCanvasWheel);
+    // Mouse wheel
+    canvas.addEventListener("wheel", this.#onWheel, { passive: false });
+
+    // Disable right click context manu
+    canvas.addEventListener("contextmenu", this.#onContextMenu);
+
+    // Window fallbacks
+    window.addEventListener("pointerup", this.#onWindowPointerUp);
+    window.addEventListener("mouseup", this.#onWindowPointerUp); // fallback
+    document.addEventListener("visibilitychange", this.#onVisibilityChange);
+
+    // Category bar and button container
     particleCategoryBar.addEventListener("click", (e) => {
       // Get the first category button inside the category bar
       const button = e.target.closest(".category-button");
@@ -167,37 +183,108 @@ export class InputManager {
       if (button) this.#updateSelectedParticle(button);
     });
   }
-  #handleCanvasMouseDown = (e) => {
-    this.#isMouseDown = true;
-  };
-  #handleCanvasMouseUp = (e) => {
-    this.#isMouseDown = false;
-  };
-  #handleCanvasMouseMove = (e) => {
-    this.#latestMouseCoords.x = e.clientX;
-    this.#latestMouseCoords.y = e.clientY;
-  };
-  #handleCanvasWheel = (e) => {
-    // Prevent the page from scrolling
-    e.preventDefault();
-    this.#shouldChangeBrushSize = true;
-    this.#changeBrushSizeDir = e.deltaY;
-  };
+  #onPointerDown = (e) => {
+    this.#activePointerId = e.pointerId;
 
-  // Returns a 2d vector of the current mouse position
-  #getMousePositionOnGrid() {
+    // Left mouse button
+    if (e.button === 0) {
+      this.isPainting = true;
+      this.isErasing = false;
+      this.#activeButton = "left";
+    }
+    // Right mouse button
+    else if (e.button === 2) {
+      this.isErasing = true;
+      this.isPainting = false;
+      this.#activeButton = "right";
+    }
+    // Middle mouse button
+    else {
+      this.isPainting = false;
+      this.isErasing = false;
+      this.#activeButton = null;
+    }
+
+    // Capture pointer to keep receiving pointer events even if pointer leaves the canvas
+    try {
+      this.#canvas.setPointerCapture(e.pointerId);
+    } catch (err) {}
+
     // Get canvas dimensions
     const rect = this.#canvas.getBoundingClientRect();
     const scaleX = this.#canvas.width / rect.width;
     const scaleY = this.#canvas.height / rect.height;
 
     // Calculate mouse position relative to the canvas
-    const x = (this.#latestMouseCoords.x - rect.left) * scaleX;
-    const y = (this.#latestMouseCoords.y - rect.top) * scaleY;
+    this.latestMouseCoords.x = (e.clientX - rect.left) * scaleX;
+    this.latestMouseCoords.y = (e.clientY - rect.top) * scaleY;
+  };
+  #onPointerUp = (e) => {
+    if (this.#activePointerId === e.pointerId) {
+      this.#activePointerId = null;
+      this.#activeButton = null;
+      try {
+        this.#canvas.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+    }
 
-    // Return clamped mouse position for a discreet grid
-    return { x: Math.floor(x), y: Math.floor(y) };
-  }
+    // Clear flags on pointerup
+    this.isPainting = false;
+    this.isErasing = false;
+  };
+  #onPointerMove = (e) => {
+    // Get canvas dimensions
+    const rect = this.#canvas.getBoundingClientRect();
+    const scaleX = this.#canvas.width / rect.width;
+    const scaleY = this.#canvas.height / rect.height;
+
+    // Calculate mouse position relative to the canvas
+    this.latestMouseCoords.x = (e.clientX - rect.left) * scaleX;
+    this.latestMouseCoords.y = (e.clientY - rect.top) * scaleY;
+
+    // Only update if user actually changed hold state mid drag
+    if (typeof e.buttons === "number") {
+      const leftPressed = (e.buttons & 1) === 1;
+      const rightPressed = (e.buttons & 2) === 2;
+      this.isPainting = leftPressed;
+      this.isErasing = rightPressed;
+    }
+  };
+  #onPointerCancel = (e) => {
+    this.isPainting = false;
+    this.isErasing = false;
+
+    if (this.#activePointerId === e.pointerId) {
+      try {
+        this.#canvas.releasePointerCapture(e.pointerId);
+      } catch (err) {}
+      this.#activePointerId = null;
+      this.#activeButton = null;
+    }
+  };
+  #onWindowPointerUp = (e) => {
+    this.isPainting = false;
+    this.isErasing = false;
+    this.#activePointerId = null;
+    this.#activeButton = null;
+  };
+  #onVisibilityChange = () => {
+    if (document.hidden) {
+      this.isPainting = false;
+      this.isErasing = false;
+      this.#activePointerId = null;
+      this.#activeButton = null;
+    }
+  };
+  #onWheel = (e) => {
+    e.preventDefault();
+    this.shouldChangeBrushSize = true;
+    this.changeBrushSizeDir = e.deltaY;
+  };
+
+  #onContextMenu = (e) => {
+    e.preventDefault();
+  };
 
   // Function to generate the overlay map for the circle outline
   #calculateBrushOutline(centerX, centerY) {

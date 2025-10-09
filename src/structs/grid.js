@@ -85,6 +85,53 @@ export class Grid {
     }
   }
 
+  swapParticles(particleAIndex, particleBIndex, markAsDirty = false, markNeighborsAsDirty = false) {
+    if (particleAIndex === particleBIndex) return false;
+    if (particleAIndex < 0 || particleAIndex >= this.#data.length) return false;
+    if (particleBIndex < 0 || particleBIndex >= this.#data.length) return false;
+
+    const particleA = this.#data[particleAIndex];
+    const particleB = this.#data[particleBIndex];
+    if (!particleA || !particleB) return false;
+
+    const particleAPos = { ...particleA.position };
+    const particleBPos = { ...particleB.position };
+
+    particleA.position = particleBPos;
+    particleB.position = particleAPos;
+    this.#data[particleAIndex] = particleB;
+    this.#data[particleBIndex] = particleA;
+
+    // Recalculate indexes for both particles
+    particleA.index = particleA.position.y * this.width + particleA.position.x;
+    particleB.index = particleB.position.y * this.width + particleB.position.x;
+
+    // Dirty cell handling
+    if (markAsDirty) {
+      // Add the new positions of both particles to the dirty set
+      this.#dirtyParticles.add(particleA);
+      this.#dirtyParticles.add(particleB);
+
+      // Add the neighbors of the NEW positions to the dirty set
+      if (markNeighborsAsDirty) {
+        const particleANeighbors = this.getValidNeighborParticles(particleA, this.NEIGHBOR);
+        const particleBNeighbors = this.getValidNeighborParticles(particleB, this.NEIGHBOR);
+        if (particleANeighbors) {
+          for (const neighbor of particleANeighbors) {
+            this.#dirtyParticles.add(neighbor);
+          }
+        }
+        if (particleBNeighbors) {
+          for (const neighbor of particleBNeighbors) {
+            this.#dirtyParticles.add(neighbor);
+          }
+        }
+      }
+    }
+
+    return true;
+  }
+
   createParticleAt(x, y, particleId, markAsDirty = false, markNeighborsAsDirty = false) {
     // Don't create a particle if the given location and the particle id is invalid
     if (!this.isInBounds(x, y) || !particleId) return false;

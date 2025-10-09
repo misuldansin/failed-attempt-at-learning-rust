@@ -43,7 +43,7 @@ export class Renderer {
   }
   queueOverlayPixels(pixelsToQueue) {
     if (!pixelsToQueue) return;
-    this.#queuedOverlayPixels.clear();
+    //this.#queuedOverlayPixels.clear();
 
     for (const pixel of pixelsToQueue) {
       this.#queuedOverlayPixels.set(pixel.index, pixel);
@@ -55,7 +55,7 @@ export class Renderer {
 
     // Step 2. add overlay data
     let finalPixelBuffer = new Uint8ClampedArray(this.#pixelBuffer);
-    //this.#addOverlayPixels(this.#queuedOverlayPixels, finalPixelBuffer);
+    this.#addOverlayPixels(this.#queuedOverlayPixels, finalPixelBuffer);
 
     // Step 3. render the final result
     this.#drawGrid(finalPixelBuffer);

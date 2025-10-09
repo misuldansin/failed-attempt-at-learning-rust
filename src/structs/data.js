@@ -117,7 +117,7 @@ export const PARTICLE_DATA = Object.freeze({
     COLOR_BASE: "#0E0E11", // 0E0E11 ? 19191D
     COLOR_VARIANT: "#0E0E11",
     CATEGORY: CATEGORY.SOLID,
-    ISMOVABLE: false,
+    ISMOVABLE: true,
     DENSITY: 0,
   },
 
@@ -339,7 +339,7 @@ export const PARTICLE_DATA = Object.freeze({
     CATEGORY: CATEGORY.SAND,
     ISMOVABLE: true,
     DENSITY: 1,
-    REPOSE_ANGLE: 20,
+    REPOSE_ANGLE: 32,
   },
   [PARTICLE.GRAVEL]: {
     ID: PARTICLE.GRAVEL,
@@ -369,7 +369,7 @@ export const PARTICLE_DATA = Object.freeze({
     CATEGORY: CATEGORY.SAND,
     ISMOVABLE: true,
     DENSITY: 2.7,
-    REPOSE_ANGLE: 50,
+    REPOSE_ANGLE: 65,
   },
   [PARTICLE.QUARTZ_SAND]: {
     ID: PARTICLE.QUARTZ_SAND,
@@ -379,7 +379,7 @@ export const PARTICLE_DATA = Object.freeze({
     CATEGORY: CATEGORY.SAND,
     ISMOVABLE: true,
     DENSITY: 2.3,
-    REPOSE_ANGLE: 70,
+    REPOSE_ANGLE: 62,
   },
 
   // --- Electronics ---
