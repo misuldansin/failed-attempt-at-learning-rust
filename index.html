@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bog Engine</title>
+
+    <!-- styles -->
+    <link rel="stylesheet" href="src/style.css" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&display=swap" />
+  </head>
+
+  <body class="app-body">
+    <div id="main-panel">
+      <canvas id="main-canvas"></canvas>
+
+      <div id="desktop-overlay">
+        <div id="particle-palette">
+          <div id="particle-button-container" class="content-container"></div>
+          <div id="particle-category-bar" class="category-bar"></div>
+        </div>
+
+        <div id="property-panel">
+          <div id="property-container" class="content-container"></div>
+          <div id="property-category-bar" class="category-bar"></div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <!-- Load structs -->
+  <script type="module" src="src/structs/data.js"></script>
+  <script type="module" src="src/structs/color.js"></script>
+  <script type="module" src="src/structs/grid.js"></script>
+
+  <!-- Load Utility libraries -->
+  <script type="module" src="src/utils/utils.js"></script>
+
+  <!-- Load input manager, renderer, and debugger -->
+  <script type="module" src="src/io/inputManager.js"></script>
+  <script type="module" src="src/io/renderer.js"></script>
+
+  <!-- Load game engine, and physics library -->
+  <script type="module" src="src/core/engine.js"></script>
+
+  <!-- Load the main script -->
+  <script type="module" src="main.js"></script>
+</html>
