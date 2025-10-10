@@ -18,21 +18,21 @@ export const Utility = {
     let directions = [];
 
     // First, go straight down
-    directions.push([{ dx: 0, dy: 1 }]);
+    directions.push([{ dx: 0, dy: -1 }]);
 
     // If the angle is less than 50°...
     if (angle < 50) {
       // ..Then, second, go down, and left and right
       directions.push([
-        { dx: 1, dy: 1 },
-        { dx: -1, dy: 1 },
+        { dx: 1, dy: -1 },
+        { dx: -1, dy: -1 },
       ]);
 
       // Third, go down, and cot(θ) times left and right, where θ is in radian
       const x = Math.round(1 / Math.tan(t));
       directions.push([
-        { dx: x, dy: 1 },
-        { dx: x * -1, dy: 1 },
+        { dx: x, dy: -1 },
+        { dx: x * -1, dy: -1 },
       ]);
     }
 
@@ -41,8 +41,8 @@ export const Utility = {
       //..Then, second, go down, and left and right
       const y = Math.round(Math.tan(t));
       directions.push([
-        { dx: 1, dy: y },
-        { dx: -1, dy: y },
+        { dx: 1, dy: -y },
+        { dx: -1, dy: -y },
       ]);
     }
 

@@ -8,14 +8,14 @@ export class Grid {
   #data;
   #dirtyParticles;
   NEIGHBOR = {
-    TOP_LEFT: { dx: -1, dy: -1 },
-    TOP_MIDDLE: { dx: 0, dy: -1 },
-    TOP_RIGHT: { dx: 1, dy: -1 },
+    TOP_LEFT: { dx: -1, dy: 1 },
+    TOP_MIDDLE: { dx: 0, dy: 1 },
+    TOP_RIGHT: { dx: 1, dy: 1 },
     LEFT: { dx: -1, dy: 0 },
     RIGHT: { dx: 1, dy: 0 },
-    DOWN_LEFT: { dx: -1, dy: 1 },
-    DOWN_MIDDLE: { dx: 0, dy: 1 },
-    DOWN_RIGHT: { dx: 1, dy: 1 },
+    DOWN_LEFT: { dx: -1, dy: -1 },
+    DOWN_MIDDLE: { dx: 0, dy: -1 },
+    DOWN_RIGHT: { dx: 1, dy: -1 },
   };
   PROCESSED_PARTICLE_DATA = {};
 
@@ -179,24 +179,8 @@ export class Grid {
 
           // Mark them as dirty
           if (markAsDirty) {
-            this.#dirtyParticles.add(particle);
-            this.#dirtyParticles.add(target);
-
-            // Add the neighbors of the NEW positions to the dirty set
-            if (markNeighborsAsDirty) {
-              const particleNeighbors = this.getValidNeighborParticles(particle, this.NEIGHBOR);
-              const targetNeighbors = this.getValidNeighborParticles(target, this.NEIGHBOR);
-              if (particleNeighbors) {
-                for (const neighbor of particleNeighbors) {
-                  this.#dirtyParticles.add(neighbor);
-                }
-              }
-              if (targetNeighbors) {
-                for (const neighbor of targetNeighbors) {
-                  this.#dirtyParticles.add(neighbor);
-                }
-              }
-            }
+            this.markParticleDirty(particle, markNeighborsAsDirty);
+            this.markParticleDirty(target, markNeighborsAsDirty);
           }
 
           return target; // Particle was moved successfully
@@ -206,52 +190,9 @@ export class Grid {
     return null; // Particle could not be moved successfully
   }
 
-  // Swap particle A and B location on the data array.
+  // DONOT CALL!!! (WIP)
   swapParticles(particleAIndex, particleBIndex, markAsDirty = false, markNeighborsAsDirty = false) {
-    if (particleAIndex === particleBIndex) return false;
-    if (particleAIndex < 0 || particleAIndex >= this.#data.length) return false;
-    if (particleBIndex < 0 || particleBIndex >= this.#data.length) return false;
-
-    const particleA = this.#data[particleAIndex];
-    const particleB = this.#data[particleBIndex];
-    if (!particleA || !particleB) return false;
-
-    const particleAPos = { ...particleA.position };
-    const particleBPos = { ...particleB.position };
-
-    particleA.position = particleBPos;
-    particleB.position = particleAPos;
-    this.#data[particleAIndex] = particleB;
-    this.#data[particleBIndex] = particleA;
-
-    // Recalculate indexes for both particles
-    particleA.index = particleA.position.y * this.width + particleA.position.x;
-    particleB.index = particleB.position.y * this.width + particleB.position.x;
-
-    // Dirty cell handling
-    if (markAsDirty) {
-      // Add the new positions of both particles to the dirty set
-      this.#dirtyParticles.add(particleA);
-      this.#dirtyParticles.add(particleB);
-
-      // Add the neighbors of the NEW positions to the dirty set
-      if (markNeighborsAsDirty) {
-        const particleANeighbors = this.getValidNeighborParticles(particleA, this.NEIGHBOR);
-        const particleBNeighbors = this.getValidNeighborParticles(particleB, this.NEIGHBOR);
-        if (particleANeighbors) {
-          for (const neighbor of particleANeighbors) {
-            this.#dirtyParticles.add(neighbor);
-          }
-        }
-        if (particleBNeighbors) {
-          for (const neighbor of particleBNeighbors) {
-            this.#dirtyParticles.add(neighbor);
-          }
-        }
-      }
-    }
-
-    return true;
+    return null;
   }
 
   // Returns a neighbor in the offset direction of a given particle

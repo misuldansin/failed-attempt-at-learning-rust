@@ -1,11 +1,19 @@
 import { CATEGORY, CATEGORY_DATA, PARTICLE, PARTICLE_DATA } from "../structs/data.js";
 import { Renderer } from "../io/renderer.js";
 import { Color } from "../structs/color.js";
+import { Settings } from "../settings.js";
 
 export class InputManager {
   // Default settings
-  #brushSizeSensitivity = 0.02;
-  #maxBrushSize = 16;
+  #brushSizeSensitivity = Settings.BRUSH_SENSITIVITY;
+  #maxBrushSize = Settings.BRUSH_MAX_SIZE;
+
+  // Variables
+  #selectedParticle = Settings.SELECTED_PARTICLE;
+  #selectedCategory = Settings.SELECTED_CATEGORY;
+  #currentBrushSize = Settings.BRUSH_CUR_SIZE;
+  #currentPressure = Settings.CURRENT_PRESSURE;
+  #currentConcentration = Settings.CURRENT_CONCENTRATION;
 
   // Dependencies and DOM elements
   #renderer;
@@ -21,14 +29,6 @@ export class InputManager {
   changeBrushSizeDir = 0;
   #activePointerId = null;
   #activeButton = null;
-
-  // Variables
-  #selectedParticle = parseInt(PARTICLE.SAND); // The default selected particle
-  #selectedCategory = parseInt(CATEGORY.SAND);
-  #currentBrushSize = 4;
-  #currentSpeed = 25;
-  #currentPressure = 0;
-  #currentConcentration = 1;
 
   constructor(rendererInstance) {
     if (!(rendererInstance instanceof Renderer)) {
@@ -47,7 +47,9 @@ export class InputManager {
 
   processInput(grid, renderer) {
     // --- Handle UI rendering ---
-    const mousePosition = { x: Math.floor(this.latestMouseCoords.x), y: Math.floor(this.latestMouseCoords.y) };
+    const mouseX = this.latestMouseCoords.x;
+    const mouseY = this.latestMouseCoords.y;
+    const mousePosition = { x: Math.floor(mouseX), y: Math.floor(mouseY) };
     const brushOutlineOverlay = this.#calculateBrushOutline(mousePosition.x, mousePosition.y);
     renderer.queueOverlayPixels(brushOutlineOverlay);
 
@@ -217,7 +219,7 @@ export class InputManager {
 
     // Calculate mouse position relative to the canvas
     this.latestMouseCoords.x = (e.clientX - rect.left) * scaleX;
-    this.latestMouseCoords.y = (e.clientY - rect.top) * scaleY;
+    this.latestMouseCoords.y = this.#canvas.height - (e.clientY - rect.top) * scaleY; // Flip Y
   };
   #onPointerUp = (e) => {
     if (this.#activePointerId === e.pointerId) {
@@ -240,7 +242,7 @@ export class InputManager {
 
     // Calculate mouse position relative to the canvas
     this.latestMouseCoords.x = (e.clientX - rect.left) * scaleX;
-    this.latestMouseCoords.y = (e.clientY - rect.top) * scaleY;
+    this.latestMouseCoords.y = this.#canvas.height - (e.clientY - rect.top) * scaleY; // Flip Y
 
     // Only update if user actually changed hold state mid drag
     if (typeof e.buttons === "number") {
@@ -308,11 +310,11 @@ export class InputManager {
           const newy = centerY + x * bigY;
 
           if (newX >= 0 && newX < width && newY >= 0 && newY < height) {
-            const index = newY * width + newX;
+            const index = (height - newY) * width + newX;
             pixels.push({ index: index, r: r, g: g, b: b, a: a });
           }
           if (newx >= 0 && newx < width && newy >= 0 && newy < height) {
-            const index = newy * width + newx;
+            const index = (height - newy) * width + newx;
             pixels.push({ index: index, r: r, g: g, b: b, a: a });
           }
         }

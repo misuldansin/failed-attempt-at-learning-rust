@@ -35,9 +35,13 @@ export class Renderer {
     this.#queuedParticles.push(...particlesToQueue);
 
     // Handle debug overlays
+    const width = this.#renderWidth;
+    const height = this.#renderHeight;
     if (alsoOverlayAsDebug) {
       for (const particle of particlesToQueue) {
-        this.#queuedOverlayPixels.set(particle.index, debugOverlayColor);
+        const flippedY = height - 1 - particle.position.y;
+        const index = flippedY * width + particle.position.x;
+        this.#queuedOverlayPixels.set(index, debugOverlayColor);
       }
     }
   }
@@ -68,12 +72,23 @@ export class Renderer {
     this.#canvas.width = this.#renderWidth;
     this.#canvas.height = this.#renderHeight;
     this.#ctx.imageSmoothingEnabled = false; // Set canvas to render image using nearest-neighbor scaling; for pixelart look
+
+    // Flip that
+    this.#ctx.translate(0, this.#canvas.height);
+    this.#ctx.scale(1, -1);
   }
   #processParticles(particlesToProcess) {
     if (!particlesToProcess) return;
 
+    const width = this.#renderWidth;
+    const height = this.#renderHeight;
+
     for (const particle of particlesToProcess) {
-      const index = particle.index;
+      const particleX = particle.position.x;
+      const particleY = particle.position.y;
+      const flippedY = height - 1 - particleY;
+      const index = flippedY * width + particleX;
+
       let pixelColor = this.#getParticleFinalColor(particle);
       this.#pixelBuffer[index * 4 + 0] = pixelColor[0]; // red
       this.#pixelBuffer[index * 4 + 1] = pixelColor[1]; // green

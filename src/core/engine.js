@@ -4,6 +4,7 @@ import { Renderer } from "../io/renderer.js";
 import { InputManager } from "../io/inputManager.js";
 import { Debug } from "../io/debug.js";
 import { Utility } from "../utils/utility.js";
+import { Settings } from "../settings.js";
 
 export class Engine {
   // Dependencies
@@ -19,8 +20,8 @@ export class Engine {
   // Game loop variables
   #isRunning = false;
   #animationFrameId = null;
-  #renderUpdateInterval = 15; // renders ~60 frames per second
-  #physicsInterval = 15; // updates physics 40 frames per second
+  #renderUpdateInterval = Settings.RENDER_UPDATE_INTERVAL;
+  #physicsInterval = Settings.PHYSICS_UPDATE_INTERVAL;
   // Time tracking for FPS
   #lastFrameTime = 0;
   #frameCount = 0;
@@ -118,20 +119,16 @@ export class Engine {
     // Clear particles processed array and current grid's dirty particles to initialise for the next part
     this.#particlesProcessed.clear();
     // Step 2. push particles to be rendered for this frame
-    this.#renderer.queueParticles(this.#currentGrid.dirtyParticles, this.#debug.isOverlayEnabled, {
-      r: 238,
-      g: 148,
-      b: 210,
-      a: 180,
-    });
+    const overlayColor = { r: 238, g: 148, b: 210, a: 180 };
+    this.#renderer.queueParticles(this.#currentGrid.dirtyParticles, this.#debug.isOverlayEnabled, overlayColor);
     // Step 3. clear any game data related to this frame
     this.#currentGrid.clearDirty();
 
     // Shuffle the entire list to randomize the horizontal order
     particlesToUpdate = Utility.shuffleArray(particlesToUpdate);
 
-    // Sort from top to bottom (y-coordinate)
-    particlesToUpdate.sort((particleA, particleB) => particleB.position.y - particleA.position.y);
+    // Sort from bottom to top (y-coordinate)
+    particlesToUpdate.sort((particleA, particleB) => particleA.position.y - particleB.position.y);
 
     // Loop through previous dirty particles and update them
     for (const particle of particlesToUpdate) {
