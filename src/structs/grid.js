@@ -17,7 +17,7 @@ export class Grid {
     DOWN_MIDDLE: { dx: 0, dy: 1 },
     DOWN_RIGHT: { dx: 1, dy: 1 },
   };
-  PROCESSED_PARTICLE_Data = {};
+  PROCESSED_PARTICLE_DATA = {};
 
   constructor(width, height, dataOverride = null) {
     this.width = width;
@@ -50,16 +50,16 @@ export class Grid {
         particle.REPOSE_DIRECTIONS = Utility.calculateRepose(particle.REPOSE_ANGLE);
       }
 
-      this.PROCESSED_PARTICLE_Data[key] = particle;
+      this.PROCESSED_PARTICLE_DATA[key] = particle;
     }
 
     // Make the newly created particle data a const
-    Object.freeze(this.PROCESSED_PARTICLE_Data);
+    Object.freeze(this.PROCESSED_PARTICLE_DATA);
   }
 
   // Particle factory
   #createNewParticle(particleId) {
-    const particleData = this.PROCESSED_PARTICLE_Data[particleId];
+    const particleData = this.PROCESSED_PARTICLE_DATA[particleId];
 
     // Generate a random color for this particle between the particle's base and variant colors
     const baseColor = Color.hexToRGBA(particleData.COLOR_BASE);

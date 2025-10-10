@@ -161,7 +161,7 @@ export class Engine {
   }
   #handleSandPhysics(particle) {
     let directions = particle.reposeDirections;
-    const targetParticle = this.#currentGrid.tryMoveParticle(particle, directions, false, true, true);
+    const targetParticle = this.#currentGrid.tryMoveParticle(particle, directions, true, true, true);
     if (targetParticle) {
       this.#particlesProcessed.add(particle);
       this.#particlesProcessed.add(targetParticle);
