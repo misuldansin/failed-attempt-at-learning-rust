@@ -11,23 +11,39 @@ export const Utility = {
     }
     return shuffledArray;
   },
-  repose(reposeAngle) {
+  calculateRepose(angleDeg) {
+    let angle = Math.max(10, Math.min(angleDeg, 80));
+    const t = (angle * Math.PI) / 180;
+
     let directions = [];
 
-    for (let y = 1; y <= 1; y++) {
-      directions.push([{ dx: 0, dy: y }]);
+    // First, go straight down
+    directions.push([{ dx: 0, dy: 1 }]);
 
-      // Calculate the max dx [tan(repose angle in rads) * dy]
-      let maxDx = Math.round(y / Math.tan(reposeAngle * (Math.PI / 180)));
-      // maxDx = Math.min(maxDx, 4);
-      if (maxDx > 4) continue;
+    // If the angle is less than 50°...
+    if (angle < 50) {
+      // ..Then, second, go down, and left and right
+      directions.push([
+        { dx: 1, dy: 1 },
+        { dx: -1, dy: 1 },
+      ]);
 
-      for (let x = 1; x <= maxDx; x++) {
-        directions.push([
-          { dx: x, dy: y },
-          { dx: -1 * x, dy: y },
-        ]);
-      }
+      // Third, go down, and cot(θ) times left and right, where θ is in radian
+      const x = Math.round(1 / Math.tan(t));
+      directions.push([
+        { dx: x, dy: 1 },
+        { dx: x * -1, dy: 1 },
+      ]);
+    }
+
+    // If the angle is greater than 50°...
+    else {
+      //..Then, second, go down, and left and right
+      const y = Math.round(Math.tan(t));
+      directions.push([
+        { dx: 1, dy: y },
+        { dx: -1, dy: y },
+      ]);
     }
 
     return directions;

@@ -3,9 +3,9 @@ export class Debug {
   #elements = new Map();
   #isEnabled;
   #isOverlayEnabled;
-  constructor(containerToAttachDebug, isEnabled = false) {
+  constructor(containerToAttachDebug, isEnabled = false, isOverlayEnabled = false) {
     this.#isEnabled = isEnabled;
-    this.#isOverlayEnabled = false;
+    this.#isOverlayEnabled = isOverlayEnabled;
     this.#initDebug(containerToAttachDebug);
   }
   get isEnabled() {

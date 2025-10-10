@@ -17,7 +17,7 @@ export class Grid {
     DOWN_MIDDLE: { dx: 0, dy: 1 },
     DOWN_RIGHT: { dx: 1, dy: 1 },
   };
-  PARTICLE_REPROCESSED_DATA = {};
+  PROCESSED_PARTICLE_Data = {};
 
   constructor(width, height, dataOverride = null) {
     this.width = width;
@@ -25,7 +25,7 @@ export class Grid {
     this.#data = new Array(width * height).fill(null);
     this.#dirtyParticles = new Set();
 
-    this.#reprocessData(PARTICLE_DATA);
+    this.#processParticleData(PARTICLE_DATA);
   }
   get data() {
     return this.#data;
@@ -41,21 +41,26 @@ export class Grid {
   }
 
   // --------- Helper Functions ---------
-  #reprocessData(particleData) {
-    for (const key in particleData) {
-      const particle = particleData[key];
+  #processParticleData(rawParticleData) {
+    for (const key in rawParticleData) {
+      const particle = rawParticleData[key];
 
       // Modify particle data
       if (particle.CATEGORY === CATEGORY.SAND) {
-        particle.REPOSE_DIRECTIONS = Utility.repose(particle.REPOSE_ANGLE);
+        particle.REPOSE_DIRECTIONS = Utility.calculateRepose(particle.REPOSE_ANGLE);
       }
 
-      this.PARTICLE_REPROCESSED_DATA[key] = particle;
+      this.PROCESSED_PARTICLE_Data[key] = particle;
     }
+
+    // Make the newly created particle data a const
+    Object.freeze(this.PROCESSED_PARTICLE_Data);
   }
 
   // Particle factory
-  #createNewParticle(particleData) {
+  #createNewParticle(particleId) {
+    const particleData = this.PROCESSED_PARTICLE_Data[particleId];
+
     // Generate a random color for this particle between the particle's base and variant colors
     const baseColor = Color.hexToRGBA(particleData.COLOR_BASE);
     const variantColor = Color.hexToRGBA(particleData.COLOR_VARIANT);
@@ -104,7 +109,7 @@ export class Grid {
     if (!this.isInBounds(x, y) || !particleId) return false;
 
     // Create a new particle and assign it's position in the grid
-    let newParticle = this.#createNewParticle(this.PARTICLE_REPROCESSED_DATA[particleId]);
+    let newParticle = this.#createNewParticle(particleId);
     newParticle.position = { x: x, y: y };
     newParticle.index = y * this.width + x;
 
@@ -136,6 +141,7 @@ export class Grid {
     if (!particle || !directionGroups) return null;
 
     for (const directions of directionGroups) {
+      if (!directions) continue;
       // Shuffle the directions for random movements
       const shuffledDirections = directions.length > 1 ? Utility.shuffleArray(directions) : directions;
 
@@ -291,6 +297,21 @@ export class Grid {
     }
   }
 
+  //
+  markParticleDirty(particle, markNeighborsAsDirty = false) {
+    this.#dirtyParticles.add(particle);
+
+    // Add the neighbors of the NEW positions to the dirty set
+    if (markNeighborsAsDirty) {
+      const particleNeighbors = this.getValidNeighborParticles(particle, this.NEIGHBOR);
+      if (particleNeighbors) {
+        for (const neighbor of particleNeighbors) {
+          this.#dirtyParticles.add(neighbor);
+        }
+      }
+    }
+  }
+
   // Function to draw a circle of particles in the grid
   fillCircleAt(x, y, radius, particleId, concentrationOverride = 1) {
     const newConcentration = concentrationOverride > 0 ? concentrationOverride : 1;
@@ -305,12 +326,7 @@ export class Grid {
           if (px >= 0 && px < this.width && py >= 0 && py < this.height) {
             const prevParticle = this.getParticleAt(px, py);
 
-            if (
-              prevParticle === null ||
-              prevParticle.id === PARTICLE.EMPTY ||
-              particleId === PARTICLE.EMPTY ||
-              particleId === prevParticle.id
-            ) {
+            if (prevParticle === null || prevParticle.id === PARTICLE.EMPTY || particleId === PARTICLE.EMPTY) {
               this.createParticleAt(px, py, particleId, true, true);
               this.getParticleAt(px, py).concentration = newConcentration;
             }

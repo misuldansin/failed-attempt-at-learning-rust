@@ -48,12 +48,8 @@ export class Engine {
     this.#currentGrid = new Grid(this.#gameWidth, this.#gameHeight);
 
     this.#currentGrid.populateGrid(PARTICLE.EMPTY);
-    this.#renderer.queueParticles(this.#currentGrid.dirtyParticles, this.#debug.isOverlayEnabled, {
-      r: 238,
-      g: 148,
-      b: 210,
-      a: 220,
-    });
+    this.#renderer.queueParticles(this.#currentGrid.dirtyParticles);
+    this.#currentGrid.clearDirty();
   }
   start() {
     if (!this.#isRunning) {
@@ -126,7 +122,7 @@ export class Engine {
       r: 238,
       g: 148,
       b: 210,
-      a: 255,
+      a: 180,
     });
     // Step 3. clear any game data related to this frame
     this.#currentGrid.clearDirty();
@@ -156,26 +152,16 @@ export class Engine {
           break;
         case CATEGORY.SAND:
           // Handle sands
-          this.#handleSandPhysics(particle, this.#currentGrid, this.#particlesProcessed);
+          this.#handleSandPhysics(particle);
           break;
         default:
           continue;
       }
     }
   }
-  #handleSandPhysics(particle, currentGrid, particlesProcessed) {
-    //let directions = JSON.parse(JSON.stringify(particle.reposeDirections));
+  #handleSandPhysics(particle) {
     let directions = particle.reposeDirections;
-
-    // let directions = [
-    //   [{ dx: 0, dy: 1 }],
-    //   [
-    //     { dx: 1, dy: 4 },
-    //     { dx: -1, dy: 4 },
-    //   ],
-    // ];
-
-    const targetParticle = this.#currentGrid.tryMoveParticle(particle, directions, true, true, true);
+    const targetParticle = this.#currentGrid.tryMoveParticle(particle, directions, false, true, true);
     if (targetParticle) {
       this.#particlesProcessed.add(particle);
       this.#particlesProcessed.add(targetParticle);

@@ -6,7 +6,7 @@ import { Debug } from "./src/io/debug.js";
 
 const renderer = new Renderer(Settings.GAMEWIDTH, Settings.GAMEHEIGHT);
 const inputManager = new InputManager(renderer);
-const debug = new Debug(document.getElementById("main-panel"), true);
+const debug = new Debug(document.getElementById("main-panel"), true, false);
 const engine = new Engine(Settings.GAMEWIDTH, Settings.GAMEHEIGHT, renderer, inputManager, debug);
 
 engine.start();
