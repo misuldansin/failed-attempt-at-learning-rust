@@ -15,7 +15,7 @@ export class Engine {
   #gameHeight;
   #currentGrid;
   #nextGrid;
-  #particlesProcessed = [];
+  #particlesProcessed = new Set();
   // Game loop variables
   #isRunning = false;
   #animationFrameId = null;
@@ -95,13 +95,13 @@ export class Engine {
     if (renderDelta >= this.#renderUpdateInterval) {
       this.#tps = (this.#tickCount * 1000) / renderDelta;
 
-      // Update UI
+      // Process input and update UI
       this.#inputManager.processInput(this.#currentGrid, this.#renderer);
 
-      // Debugger is handled here in the future
+      // Update debug display
       this.#debug.updateDisplay(this.#fps, this.#tps);
 
-      // Render the final result
+      // Render this frame
       this.#renderer.renderThisFrame();
 
       this.#tickCount = 0;
@@ -120,7 +120,7 @@ export class Engine {
     if (particlesToUpdate.length === 0) return;
 
     // Clear particles processed array and current grid's dirty particles to initialise for the next part
-    this.#particlesProcessed = new Array(this.#currentGrid.width * this.#currentGrid.height).fill(false);
+    this.#particlesProcessed.clear();
     // Step 2. push particles to be rendered for this frame
     this.#renderer.queueParticles(this.#currentGrid.dirtyParticles, this.#debug.isOverlayEnabled, {
       r: 238,
@@ -140,27 +140,33 @@ export class Engine {
     // Loop through previous dirty particles and update them
     for (const particle of particlesToUpdate) {
       if (!particle) continue; // If particle is null, don't bother
+
+      // If the particle was already processed this frame, don't bother
+      if (this.#particlesProcessed.has(particle.index)) return;
+
       switch (particle.category) {
         case CATEGORY.SOLID:
-          /** Handle solid particle's physics */
+          // Handle solids
           break;
         case CATEGORY.LIQUID:
-          /** Handle liquid particle's physics */
+          // Handle liquids
           break;
         case CATEGORY.GAS:
-          /** Handle gas particle's physics */
+          // Handle gases
           break;
         case CATEGORY.SAND:
-          /** Handle sand particle's physics */
-          this.#handleSandPhysics(this.#currentGrid, this.#particlesProcessed, particle);
+          // Handle sands
+          this.#handleSandPhysics(particle, this.#currentGrid, this.#particlesProcessed);
           break;
         default:
           continue;
       }
     }
   }
-  #handleSandPhysics(currentGrid, particlesProcessed, particle) {
-    let directions = this.#repose(particle.reposeAngle);
+  #handleSandPhysics(particle, currentGrid, particlesProcessed) {
+    //let directions = JSON.parse(JSON.stringify(particle.reposeDirections));
+    let directions = particle.reposeDirections;
+
     // let directions = [
     //   [{ dx: 0, dy: 1 }],
     //   [
@@ -169,64 +175,12 @@ export class Engine {
     //   ],
     // ];
 
-    this.#tryMovingParticle(particle, directions, currentGrid, particlesProcessed);
-  }
-
-  // Attempts to move a particle in the provided list of directions
-  #tryMovingParticle(particle, directionGroups, grid, particlesProcessed) {
-    // If the particle has already been processed this frame, don't bother
-    if (particlesProcessed[particle.index]) return;
-
-    // Iterate through each group in the directionGroups
-    for (const directions of directionGroups) {
-      // Shuffle the directions for random movements
-      const shuffledDirections = directions.length > 1 ? Utility.shuffleArray(directions) : directions;
-
-      for (const direction of shuffledDirections) {
-        // Get the neighbor in the direction
-        const neighbor = grid.getNeighborParticle(particle, direction);
-
-        // If neighbor does not exist, don't bother
-        if (!neighbor) continue;
-
-        // if an empty neighbor exists OR if the neighbor is movable and is less dense than the particle...
-        if (neighbor.isMovable && particle.density > neighbor.density) {
-          // ...swap their places
-          grid.swapParticles(particle.index, neighbor.index, true, true);
-
-          return;
-        }
-      }
+    const targetParticle = this.#currentGrid.tryMoveParticle(particle, directions, true, true, true);
+    if (targetParticle) {
+      this.#particlesProcessed.add(particle);
+      this.#particlesProcessed.add(targetParticle);
     }
   }
 
   // --------- Helper Functions ---------
-  #repose(reposeAngle) {
-    let directions = [];
-
-    for (let y = 1; y <= 1; y++) {
-      directions.push([{ dx: 0, dy: y }]);
-
-      // Calculate the max dx [tan(repose angle in rads) * dy]
-      let maxDx = Math.round(y / Math.tan(reposeAngle * (Math.PI / 180)));
-      // maxDx = Math.min(maxDx, 4);
-      if (maxDx > 4) continue;
-
-      for (let x = 1; x <= maxDx; x++) {
-        if (Math.random() < 0.5) {
-          directions.push([
-            { dx: 2 * x, dy: y },
-            { dx: -2 * x, dy: y },
-          ]);
-        } else {
-          directions.push([
-            { dx: x, dy: y },
-            { dx: -1 * x, dy: y },
-          ]);
-        }
-      }
-    }
-
-    return directions;
-  }
 }
