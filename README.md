@@ -12,7 +12,5 @@ Bog-engine is licensed under the [MIT](https://github.com/misuldansin/bog-engine
 
 This project uses external open-source assets, all under the MIT License:
 
-- **Feather Icons** — © Cole Bemis  
-  [MIT License](https://github.com/feathericons/feather/blob/master/LICENSE)
-- **Heroicons** — © Tailwind Labs, Inc.  
-  [MIT License](https://github.com/tailwindlabs/heroicons/blob/master/LICENSE)
+- **Tabler Icons** — © 2020-2025 Paweł Kuna
+  [MIT License](https://github.com/tabler/tabler-icons/blob/main/LICENSE)
