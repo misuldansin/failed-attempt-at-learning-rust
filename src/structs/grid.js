@@ -151,7 +151,7 @@ export class Grid {
         let finalDX = direction.dx;
         if (dumpThemNerds) {
           if (Math.random() > 0.5) {
-            finalDX = direction.dx * -2;
+            finalDX = direction.dx * -1;
           }
         }
 

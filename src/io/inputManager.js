@@ -2,6 +2,7 @@ import { CATEGORY, CATEGORY_DATA, PARTICLE, PARTICLE_DATA } from "../structs/dat
 import { Renderer } from "../io/renderer.js";
 import { Color } from "../structs/color.js";
 import { Settings } from "../settings.js";
+import { Window } from "../structs/window.js";
 
 export class InputManager {
   // Default settings
@@ -17,24 +18,30 @@ export class InputManager {
 
   // Dependencies and DOM elements
   #renderer;
+  #mainContainer = document.getElementById("main-panel");
   #canvas = document.getElementById("main-canvas");
   #selectedParticleButton;
   #selectedCategoryButton;
+  #width;
+  #height;
 
   // Input / Output states
   isPainting = false;
   isErasing = false;
+  isDrawingOverlay = false;
   latestMouseCoords = { x: 0, y: 0 };
   shouldChangeBrushSize = false;
   changeBrushSizeDir = 0;
   #activePointerId = null;
   #activeButton = null;
 
-  constructor(rendererInstance) {
+  constructor(inputWidth, inputHeight, rendererInstance) {
     if (!(rendererInstance instanceof Renderer)) {
       throw new Error("InputManager constructor requires valid instances!");
     }
     this.#renderer = rendererInstance;
+    this.#width = inputWidth;
+    this.#height = inputHeight;
 
     // Initialize UI elements
     this.#initCategoryButtons();
@@ -43,24 +50,39 @@ export class InputManager {
 
     // Update particle palette after initializing UI elements
     this.#updateParticlePalette(this.#selectedCategoryButton);
+
+    // ! Temp: testing windows manager
+    //const newWindow = new Window(50, 50, this.#mainContainer);
   }
 
   processInput(grid, renderer) {
-    // --- Handle UI rendering ---
     const mouseX = this.latestMouseCoords.x;
     const mouseY = this.latestMouseCoords.y;
     const mousePosition = { x: Math.floor(mouseX), y: Math.floor(mouseY) };
-    const brushOutlineOverlay = this.#calculateBrushOutline(mousePosition.x, mousePosition.y);
-    renderer.queueOverlayPixels(brushOutlineOverlay);
+
+    // --- Handle UI rendering ---
+    if (this.isDrawingOverlay) {
+      const brushOutlineOverlay = this.#calculateBrushOutline(mousePosition.x, mousePosition.y);
+      renderer.queueOverlayPixels(brushOutlineOverlay);
+    }
 
     // --- Handle input ---
 
     // Paint particles
     if (this.isPainting || this.isErasing) {
-      const x = mousePosition.x;
-      const y = mousePosition.y;
-      const particleId = this.isPainting ? this.#selectedParticle : PARTICLE.EMPTY;
-      grid.fillCircleAt(x, y, this.#currentBrushSize, particleId, this.#currentConcentration);
+      // Not need to paint or erase if the cursor is outside of the inputs bounds
+      const isInXBounds =
+        mousePosition.x < this.#width + this.#currentBrushSize && mousePosition.x >= 0 - this.#currentBrushSize;
+      const isInYBounds =
+        mousePosition.y < this.#height + this.#currentBrushSize && mousePosition.y >= 0 - this.#currentBrushSize;
+      if (isInXBounds && isInYBounds) {
+        const x = mousePosition.x;
+        const y = mousePosition.y;
+        const particleId = this.isPainting ? this.#selectedParticle : PARTICLE.EMPTY;
+        grid.fillCircleAt(x, y, this.#currentBrushSize, particleId, this.#currentConcentration);
+
+        console.log(this.isPainting);
+      }
     }
 
     // Change brush size
@@ -155,6 +177,7 @@ export class InputManager {
     const canvas = this.#canvas;
     const particleCategoryBar = document.getElementById("particle-category-bar");
     const particleButtonContainer = document.getElementById("particle-button-container");
+    const mainPanel = document.getElementById("main-panel");
 
     // Pointer events (mouse, touch, and stylus)
     canvas.addEventListener("pointerdown", this.#onPointerDown);
@@ -162,6 +185,8 @@ export class InputManager {
     canvas.addEventListener("pointerup", this.#onPointerUp);
     canvas.addEventListener("pointercancel", this.#onPointerCancel);
     canvas.addEventListener("lostpointercapture", this.#onPointerCancel);
+    canvas.addEventListener("pointerenter", this.#onPointerEnter);
+    canvas.addEventListener("pointerleave", this.#onPointerLeave);
 
     // Mouse wheel
     canvas.addEventListener("wheel", this.#onWheel, { passive: false });
@@ -214,8 +239,8 @@ export class InputManager {
 
     // Get canvas dimensions
     const rect = this.#canvas.getBoundingClientRect();
-    const scaleX = this.#canvas.width / rect.width;
-    const scaleY = this.#canvas.height / rect.height;
+    const scaleX = this.#width / rect.width;
+    const scaleY = this.#height / rect.height;
 
     // Calculate mouse position relative to the canvas
     this.latestMouseCoords.x = (e.clientX - rect.left) * scaleX;
@@ -237,7 +262,7 @@ export class InputManager {
   #onPointerMove = (e) => {
     // Get canvas dimensions
     const rect = this.#canvas.getBoundingClientRect();
-    const scaleX = this.#canvas.width / rect.width;
+    const scaleX = this.#width / rect.width;
     const scaleY = this.#canvas.height / rect.height;
 
     // Calculate mouse position relative to the canvas
@@ -283,9 +308,14 @@ export class InputManager {
     this.shouldChangeBrushSize = true;
     this.changeBrushSizeDir = e.deltaY;
   };
-
   #onContextMenu = (e) => {
     e.preventDefault();
+  };
+  #onPointerEnter = (e) => {
+    this.isDrawingOverlay = true;
+  };
+  #onPointerLeave = (e) => {
+    this.isDrawingOverlay = false;
   };
 
   // Function to generate the overlay map for the circle outline
@@ -297,8 +327,8 @@ export class InputManager {
     const b = 227;
     const a = 180;
 
-    const width = this.#renderer.renderWidth;
-    const height = this.#renderer.renderHeight;
+    const width = this.#width;
+    const height = this.#height;
     const offsets = [-1, 1];
 
     const plotOctets = (x, y) => {
