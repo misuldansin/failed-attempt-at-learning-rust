@@ -1,5 +1,14 @@
-# Folder to ignore VS Code settings
+/target/
+.temp/
+*.tmp
 .vscode/
-
-# Folder to ignore temporary/scratch files
-temp/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+rustfmt.toml
+node_modules/
+dist/
+web/.cache/
+/web/
+*.bak

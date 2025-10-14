@@ -1,0 +1,71 @@
+# =======================================================================
+#  Particle Metadata (used by the engine to define all particles)
+# ------------------------ Format Rules ---------------------------------
+# | Start with declaring the particle's ID using '[]'                   |
+# | ':' is used to separate Key/value pairs                             |
+# | '#' and empty lines are ignored                                     |
+# | Duplicate particle IDs are ignored                                  |
+# -----------------------------------------------------------------------
+
+# Empty
+[10]
+name: Empty
+category: 1
+base_color: #0E0E11
+variant_color: #0E0E11
+is_movable: true
+density: 0.0
+
+# Stone
+[11]
+name: Stone
+category: 1
+base_color: #7C7872
+variant_color: #5E5A55
+is_movable: false
+density: 55.0
+
+# Wall
+[12]
+name: Wall
+category: 1
+base_color: #9A9A9A
+variant_color: #7E7E7E
+is_movable: false
+density: 999.0
+
+# Wood
+[13]
+name: Wood
+category: 1
+base_color: #9B6430
+variant_color: #70461F
+is_movable: false
+density: 32.0
+
+# Metal
+[14]
+name: Metal
+category: 1
+base_color: #B7B9C0
+variant_color: #8A8C91
+is_movable: false
+density: 86.0
+
+# Ice
+[15]
+name: Ice
+category: 1
+base_color: #C6E7F1
+variant_color: #A1D2E0
+is_movable: false
+density: 69.0
+
+# Glass
+[16]
+name: Glass
+category: 1
+base_color: #A5E0E8
+variant_color: #79C6D0
+is_movable: false
+density: 120.0
