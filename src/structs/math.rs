@@ -1,11 +1,22 @@
 #[derive(Debug, Clone, Copy)]
-pub struct Vector2D {
-    pub x: i32,
-    pub y: i32,
+pub struct Vector2<T> {
+    pub x: T,
+    pub y: T,
 }
-impl Vector2D {
-    pub fn new(x: i32, y: i32) -> Vector2D {
-        return Vector2D { x: x, y: y };
+impl<T> Vector2<T> {
+    pub fn new(x: T, y: T) -> Vector2<T> {
+        return Vector2 { x: x, y: y };
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Offset2<T> {
+    pub dx: T,
+    pub dy: T,
+}
+impl<T> Offset2<T> {
+    pub fn new(dx: T, dy: T) -> Offset2<T> {
+        return Offset2 { dx: dx, dy: dy };
     }
 }
 

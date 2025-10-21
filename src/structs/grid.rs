@@ -1,9 +1,11 @@
 use crate::loader::load_particle_data;
-use crate::structs::math::Vector2D;
+use crate::structs::math::{Offset2, Vector2};
 use crate::structs::particle::Particle;
 use crate::structs::particle_data::ParticleData;
 use std::collections::HashMap;
 use std::collections::HashSet;
+
+use rand::{Rng, prelude::SliceRandom, prelude::ThreadRng, random};
 
 const MOORE_NEIGHBORS: [(i32, i32); 8] = [(-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1)];
 const VON_NEUMANN_NEIGHBORS: [(i32, i32); 4] = [(0, -1), (-1, 0), (1, 0), (0, 1)];
@@ -55,7 +57,7 @@ impl Grid {
         }
     }
 
-    pub fn mark_particle_dirty(&mut self, x: i32, y: i32, mark_neighbors_as_dirty: bool) {
+    pub fn mark_particle_dirty(&mut self, x: i32, y: i32, mark_neighbors_dirty: bool) {
         // Get particle's index
         let particle_index: u32 = (y * self.width + x) as u32;
 
@@ -63,7 +65,7 @@ impl Grid {
         self.dirty_particles.insert(particle_index);
 
         // Mark particle's neighbors dirty
-        if mark_neighbors_as_dirty {
+        if mark_neighbors_dirty {
             // Get particle's neighbors
             let neighbor_indices: Vec<u32> = self.get_neighbor_indices_of(x, y, &MOORE_NEIGHBORS);
 
@@ -81,8 +83,8 @@ impl Grid {
         x: i32,
         y: i32,
         particle_id: u16,
-        mark_as_dirty: bool,
-        mark_neighbors_as_dirty: bool,
+        mark_dirty: bool,
+        mark_neighbors_dirty: bool,
     ) -> bool {
         // x and y axis are out of bounds, return
         if !(self.is_in_bounds(x, y)) {
@@ -106,8 +108,8 @@ impl Grid {
         self.data[index as usize] = new_particle;
 
         // Handle dirty logic
-        if mark_as_dirty {
-            self.mark_particle_dirty(x, y, mark_neighbors_as_dirty);
+        if mark_dirty {
+            self.mark_particle_dirty(x, y, mark_neighbors_dirty);
         }
 
         return true;
@@ -139,5 +141,96 @@ impl Grid {
         }
 
         return neighbors;
+    }
+
+    pub fn try_move_particle(
+        &mut self,
+        particle_index: usize,
+        direction_groups: &[Vec<Offset2<i32>>],
+        mark_dirty: bool,
+        mark_neighbors_dirty: bool,
+    ) -> bool {
+        let particle: Particle = self.data[particle_index].clone();
+
+        for directions in direction_groups {
+            let mut rng: ThreadRng = rand::thread_rng();
+            let mut randomise_directions: Vec<Offset2<i32>> = directions.clone();
+            randomise_directions.shuffle(&mut rng);
+
+            for direction in randomise_directions {
+                let tx: i32 = particle.position.x + direction.dx;
+                let ty: i32 = particle.position.y + direction.dy;
+
+                // Target location is out of bounds, skip this target
+                if !self.is_in_bounds(tx, ty) {
+                    continue;
+                }
+
+                // Get target particle index
+                let target_index: usize = (ty * self.width + tx) as usize;
+
+                // Target location and this particle location are same, skip this target
+                if particle_index == target_index {
+                    continue;
+                }
+
+                let moved: bool = {
+                    let (a, b) = if particle_index < target_index {
+                        let (a, b) = self.data.split_at_mut(target_index);
+                        (&mut a[particle_index], &mut b[0])
+                    } else {
+                        let (a, b) = self.data.split_at_mut(particle_index);
+                        (&mut b[0], &mut a[target_index])
+                    };
+
+                    // If target particle is movable and has lower density than the current particle..
+                    // ..swap their location in grid data
+                    if b.is_movable && a.density > b.density {
+                        std::mem::swap(a, b);
+
+                        let temp_pos = a.position;
+                        a.position = b.position;
+                        b.position = temp_pos;
+
+                        let temp_index = a.index;
+                        a.index = b.index;
+                        b.index = temp_index;
+
+                        true
+                    } else {
+                        false
+                    }
+                };
+
+                if moved {
+                    if mark_dirty {
+                        self.mark_particle_dirty(tx, ty, mark_neighbors_dirty);
+                        self.mark_particle_dirty(particle.position.x, particle.position.y, mark_neighbors_dirty);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    pub fn fill_circle_at(&mut self, x: i32, y: i32, radius: i32, particle_id: u16) {
+        for i in -radius..radius {
+            for j in -radius..radius {
+                if i * i + j * j <= radius * radius {
+                    let px: i32 = x + i;
+                    let py: i32 = y + j;
+
+                    // Particle to draw is out of grid's bounds, skip it
+                    if !self.is_in_bounds(px, py) {
+                        continue;
+                    }
+
+                    // Create particle
+                    self.create_particle_at(px, py, particle_id, true, true);
+                }
+            }
+        }
     }
 }

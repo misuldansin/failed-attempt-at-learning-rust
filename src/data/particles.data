@@ -7,6 +7,8 @@
 # | Duplicate particle IDs are ignored                                  |
 # -----------------------------------------------------------------------
 
+## ------------------ SOLIDS (10–99) ------------------ ##
+
 # Stone
 [10]
 name: Stone
@@ -60,3 +62,79 @@ base_color: #A5E0E8
 variant_color: #79C6D0
 is_movable: false
 density: 120.0
+
+## ------------------ LIQUIDS (100–199) ------------------ ##
+
+## ------------------ GASES (200–299) ------------------ ##
+
+## ------------------ SANDS (300–399) ------------------ ##
+
+# Sand
+[300]
+name: Sand
+category: 4
+base_color: #E2C661
+variant_color: #C6A84D
+is_movable: true
+density: 2.0
+repose_angle: 45.0
+
+# Wet Sand
+[301]
+name: Wet Sand
+category: 4
+base_color: #C4A74D
+variant_color: #8D7A3A
+is_movable: true
+density: 3.0
+repose_angle: 55.0
+
+# Dust
+[302]
+name: Dust
+category: 4
+base_color: #CFCBB8
+variant_color: #BEB8A3
+is_movable: true
+density: 1.0
+repose_angle: 32.0
+
+# Gravel
+[303]
+name: Gravel
+category: 4
+base_color: #6A635A
+variant_color: #3F3B35
+is_movable: true
+density: 4.0
+repose_angle: 30.0
+
+# Volcanic Ash
+[304]
+name: Volcanic Ash
+category: 4
+base_color: #474241
+variant_color: #2F2C2B
+is_movable: true
+density: 1.5
+repose_angle: 15.0
+
+# Coarse Gravel
+[305]
+name: Coarse Gravel
+category: 4
+base_color: #7C7469
+variant_color: #686155
+is_movable: true
+density: 2.7
+repose_angle: 65.0
+
+# Quartz Sand
+[306]
+name: Quartz Sand
+category: 4
+base_color: #E1E0DA
+variant_color: #CBC9C2
+is_movable: true
+density: 2.3
+repose_angle: 62.0
