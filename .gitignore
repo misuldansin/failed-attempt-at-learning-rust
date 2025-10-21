@@ -12,3 +12,4 @@ dist/
 web/.cache/
 /web/
 *.bak
+CONOUT$

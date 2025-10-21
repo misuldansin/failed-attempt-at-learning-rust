@@ -1,12 +1,21 @@
-mod loader;
-mod structs;
+pub mod core;
+pub mod io;
+pub mod loader;
+pub mod settings;
+pub mod structs;
 
-use loader::load_particle_data;
-use std::collections::HashMap;
-use structs::color::Color;
-use structs::particle_data::ParticleData;
+use core::app_manager_interface::AppManagerInterface;
+use core::native_app_manager::NativeAppManager;
+use core::web_app_manager::WebAppManager;
+use settings::Settings;
 
 fn main() {
-    let particle_data: HashMap<u16, ParticleData> = load_particle_data("./src/data/particles.data");
-    println!("{:#?}", particle_data);
+    #[cfg(target_arch = "wasm32")]
+    let mut app_manager = WebAppManager::new();
+
+    #[cfg(not(target_arch = "wasm32"))]
+    let mut app_manager = NativeAppManager::new();
+
+    // Initialise application
+    app_manager.start();
 }

@@ -1,85 +1,108 @@
-use crate::structs::math;
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 impl Color {
-    pub fn new(hex: &str) -> Color {
-        return Self::hex_to_rgba(hex);
+    // --------- Constructor ---------
+    pub fn from_hex(hex: &str) -> Color {
+        return Self::hex_to_color(hex);
     }
-    pub fn hex_to_rgba(hex: &str) -> Color {
-        // Return black if hex is not valid
+
+    pub fn from_rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
+        return Color { r, g, b, a };
+    }
+
+    // --------- Instance Methods ---------
+    pub fn to_hex(&self) -> String {
+        return Self::color_to_hex(self);
+    }
+
+    // --------- Helper Functions ---------
+    pub fn hex_to_color(hex: &str) -> Color {
+        // Return black if hex is empty (bruv)
         if hex.is_empty() {
-            return Color { r: 0, g: 0, b: 0, a: 255 };
+            return Self::from_rgba(0, 0, 0, 255);
         }
 
         // Remove '#' to get the actual hex value
-        let mut hex_value = hex.replace("#", "");
+        let hex: &str = hex.strip_prefix('#').unwrap_or(hex);
 
-        // Expand shorthand hex to normal hex
-        if hex_value.len() == 3 {
-            let mut hex_expanded = String::new();
-            for char in hex_value.chars() {
-                hex_expanded.push(char);
-                hex_expanded.push(char);
+        // Pre-allocate 8 character length for a longhand hex
+        let mut hex_value: String = String::with_capacity(8);
+
+        // Format the hex correctly, diligently
+        if hex.len() == 8 {
+            // Already full length hex color
+            hex_value.push_str(hex);
+        } else if hex.len() == 3 {
+            // Expand shorthand to normal hex and add the alpha channel
+            for c in hex.chars() {
+                hex_value.push(c);
+                hex_value.push(c);
             }
-            hex_value = hex_expanded;
-        }
-
-        // Expand normal hex to longhand hex
-        if hex_value.len() == 6 {
             hex_value.push_str("FF");
+        } else if hex.len() == 6 {
+            // Expand normal hex to longhand by addiong the alpha channel
+            hex_value.push_str(hex);
+            hex_value.push_str("FF");
+        } else {
+            // Invalid length, return black
+            return Self::from_rgba(0, 0, 0, 255);
         }
 
-        // Parse the hex string into an integer
-        let color_in_int = match u32::from_str_radix(&hex_value, 16) {
+        // Parse the correctly formated hex to rgba 32-bit integer
+        let color_u32_rgba: u32 = match u32::from_str_radix(&hex_value, 16) {
             Ok(val) => val,
             Err(_) => {
-                return Color { r: 0, g: 0, b: 0, a: 255 };
+                // Parse failed, return black
+                return Self::from_rgba(0, 0, 0, 255);
             }
         };
 
-        return Color {
-            r: ((color_in_int >> 24) & 255) as u8,
-            g: ((color_in_int >> 16) & 255) as u8,
-            b: ((color_in_int >> 8) & 255) as u8,
-            a: (color_in_int & 255) as u8,
-        };
+        // Unpack individual RGBA channels and return them
+        return Self::raw_to_color(color_u32_rgba);
     }
-    pub fn rgba_to_hex(&self) -> String {
-        // Format each color channel into an uppercase hex string
-        let r: String = format!("{:02X}", self.r);
-        let g: String = format!("{:02X}", self.g);
-        let b: String = format!("{:02X}", self.b);
-        let a: String = format!("{:02X}", self.a);
 
-        // Combine them into a single string starting with '#'
-        let hex_string: String = format!("#{}{}{}{}", r, g, b, a);
-        return hex_string;
+    pub fn raw_to_color(rgba: u32) -> Color {
+        let r: u8 = ((rgba >> 24) & 0xFF) as u8;
+        let g: u8 = ((rgba >> 16) & 0xFF) as u8;
+        let b: u8 = ((rgba >> 08) & 0xFF) as u8;
+        let a: u8 = ((rgba >> 00) & 0xFF) as u8;
+        return Self::from_rgba(r, g, b, a);
     }
-    pub fn color_between(start: &Color, end: &Color, t: f32) -> Color {
-        // Convert to floating-point values
-        let start_r = start.r as f32;
-        let start_g = start.g as f32;
-        let start_b = start.b as f32;
-        let start_a = start.a as f32;
 
-        let end_r = end.r as f32;
-        let end_g = end.g as f32;
-        let end_b = end.b as f32;
-        let end_a = end.a as f32;
+    pub fn color_to_hex(color: &Color) -> String {
+        // Format and return longhand hex
+        return format!("#{:02X}{:02X}{:02X}{:02X}", color.r, color.g, color.b, color.a);
+    }
 
-        // Interpolate and return a color between start and end color
-        return Color {
-            r: math::lerp_f32(start_r, end_r, t) as u8,
-            g: math::lerp_f32(start_g, end_g, t) as u8,
-            b: math::lerp_f32(start_b, end_b, t) as u8,
-            a: math::lerp_f32(start_a, end_a, t) as u8,
-        };
+    pub fn color_to_raw(color: &Color) -> u32 {
+        // Pack and return RGBA channels into raw u32 format
+        return ((color.r as u32) << 24)
+            | ((color.g as u32) << 16)
+            | ((color.b as u32) << 08)
+            | ((color.a as u32) << 00);
+    }
+
+    pub fn lerp_color(color_a: &Color, color_b: &Color, t: f32) -> Color {
+        // Linear interpolation: a + (b - a) * t
+        let r = (color_a.r as f32 + (color_b.r as f32 - color_a.r as f32) * t).clamp(0.0, 255.0) as u8;
+        let g = (color_a.g as f32 + (color_b.g as f32 - color_a.g as f32) * t).clamp(0.0, 255.0) as u8;
+        let b = (color_a.b as f32 + (color_b.b as f32 - color_a.b as f32) * t).clamp(0.0, 255.0) as u8;
+        let a = (color_a.a as f32 + (color_b.a as f32 - color_a.a as f32) * t).clamp(0.0, 255.0) as u8;
+        return Self::from_rgba(r, g, b, a);
+    }
+
+    pub fn lerp_hex(hex_a: &str, hex_b: &str, t: f32) -> Color {
+        // Convert hex string to RGBA color
+        let color_a: Color = Self::hex_to_color(hex_a);
+        let color_b: Color = Self::hex_to_color(hex_b);
+
+        // Lerp and get final color
+        return Self::lerp_color(&color_a, &color_b, t);
     }
 }

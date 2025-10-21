@@ -15,8 +15,7 @@ pub struct ParticleParseData {
 
 pub fn load_particle_data(filepath: &str) -> HashMap<u16, ParticleData> {
     // Open the particle data file into string
-    let file_text: String =
-        fs::read_to_string(filepath).expect("Could not open particle data file!");
+    let file_text: String = fs::read_to_string(filepath).expect("Could not open particle data file!");
     let mut particle_data: HashMap<u16, ParticleParseData> = HashMap::new();
 
     // Retrieve data
@@ -44,9 +43,6 @@ pub fn load_particle_data(filepath: &str) -> HashMap<u16, ParticleData> {
             // Retrieve id from this line
             let id_str: &str = &this_line[1..this_line.len() - 1];
             let id: u16 = id_str.parse::<u16>().unwrap_or(0);
-
-            // ! temp:
-            // println!("Parsed new particle ID: {}", id);
 
             // Check if id already exists
             if processed_ids.contains(&id) {
@@ -107,14 +103,7 @@ pub fn load_particle_data(filepath: &str) -> HashMap<u16, ParticleData> {
     // Checksum and finalization
     let mut final_particle_data: HashMap<u16, ParticleData> = HashMap::new();
     for (id, data) in particle_data.into_iter() {
-        if let (
-            Some(name),
-            Some(category),
-            Some(base_color),
-            Some(variant_color),
-            Some(is_movable),
-            Some(density),
-        ) = (
+        if let (Some(name), Some(category), Some(base_color), Some(variant_color), Some(is_movable), Some(density)) = (
             data.name,
             data.category,
             data.base_color,
@@ -122,6 +111,11 @@ pub fn load_particle_data(filepath: &str) -> HashMap<u16, ParticleData> {
             data.is_movable,
             data.density,
         ) {
+            // Discard any particles with ID ranging from 0 to 9 as they are severed for technical particles
+            if id < 10 {
+                continue;
+            }
+
             final_particle_data.insert(
                 id,
                 ParticleData {
@@ -139,5 +133,21 @@ pub fn load_particle_data(filepath: &str) -> HashMap<u16, ParticleData> {
             println!("Corrupted particle block found of ID: {}", id);
         }
     }
+
+    // Add technical particles here (ID: 0-9)
+    // Technical particles are hard codded and should not be messed with !
+    final_particle_data.insert(
+        0,
+        ParticleData {
+            id: 0,
+            name: "Empty".to_string(),
+            category: 0,
+            base_color: "#0E0E11".to_string(),
+            variant_color: "#0E0E11".to_string(),
+            is_movable: true,
+            density: 0.0,
+        },
+    );
+
     return final_particle_data;
 }
