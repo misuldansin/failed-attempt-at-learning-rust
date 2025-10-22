@@ -5,16 +5,15 @@ use crate::io::renderer_interface::RendererInterface;
 use crate::settings::Settings;
 use crate::structs::input_state;
 use crate::structs::input_state::InputState;
-use crate::structs::math::Vector2;
+use crate::structs::utils::Vector2;
 
 use std::sync::Arc;
-use std::time::Duration;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use winit::application::ApplicationHandler;
 use winit::dpi::{LogicalPosition, LogicalSize, PhysicalSize};
 use winit::event::{ElementState, MouseButton, WindowEvent};
-use winit::event_loop::ActiveEventLoop;
 use winit::event_loop::EventLoop;
+use winit::event_loop::{ActiveEventLoop, ControlFlow};
 use winit::window::{Window, WindowAttributes, WindowId};
 
 pub struct NativeAppManager {
@@ -64,11 +63,7 @@ impl ApplicationHandler for NativeAppManager {
             .with_resizable(true);
 
         // Create window
-        let window: Arc<Window> = Arc::new(
-            event_loop
-                .create_window(attrs)
-                .expect("Failed to create window or sumn"),
-        );
+        let window: Arc<Window> = Arc::new(event_loop.create_window(attrs).expect("Failed to create window or sumn"));
 
         // Center window on startup
         if let Some(monitor) = window.current_monitor() {
@@ -82,7 +77,7 @@ impl ApplicationHandler for NativeAppManager {
         self.window = Some(window.clone());
 
         // Create renderer and engine
-        let renderer = NativeRenderer::new(self.settings.game_width, self.settings.game_height, &window);
+        let renderer: NativeRenderer = NativeRenderer::new(self.settings.game_width, self.settings.game_height, &window);
         self.renderer = Some(renderer);
 
         let engine = Engine::new(
@@ -126,11 +121,7 @@ impl ApplicationHandler for NativeAppManager {
                 self.input_state.mouse_position.x = position.x * scale_x;
                 self.input_state.mouse_position.y = flipped_y * scale_y;
             }
-            WindowEvent::MouseInput {
-                device_id,
-                state,
-                button,
-            } => {
+            WindowEvent::MouseInput { device_id, state, button } => {
                 let is_down: bool = state == ElementState::Pressed;
 
                 match button {
@@ -143,14 +134,19 @@ impl ApplicationHandler for NativeAppManager {
         }
     }
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        let target_frame_time = Duration::from_secs_f64(1.0 / 60.0); // ~16.67ms
+        let target_frame_time = Duration::from_secs_f64(1.0 / 60.0); // 60 FPS
         let now = Instant::now();
+        let next_frame_time = self.last_frame_time + target_frame_time;
 
-        if now.duration_since(self.last_frame_time) >= target_frame_time {
+        if now >= next_frame_time {
             self.last_frame_time = now;
             if let Some(window) = &self.window {
-                window.request_redraw();
+                window.request_redraw(); // Request redraw
             }
+
+            event_loop.set_control_flow(ControlFlow::Poll);
+        } else {
+            event_loop.set_control_flow(ControlFlow::WaitUntil(next_frame_time));
         }
     }
 }

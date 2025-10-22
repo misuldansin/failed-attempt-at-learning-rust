@@ -1,4 +1,4 @@
-use crate::structs::math::Vector2;
+use crate::structs::utils::Vector2;
 
 pub struct InputState {
     pub mouse_position: Vector2<f64>,

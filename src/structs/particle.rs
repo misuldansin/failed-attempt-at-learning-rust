@@ -1,6 +1,6 @@
 use crate::structs::color::Color;
-use crate::structs::math::Vector2;
 use crate::structs::particle_data::ParticleData;
+use crate::structs::utils::Vector2;
 use rand::{Rng, random};
 
 #[derive(Debug, Clone)]

@@ -8,24 +8,31 @@ pub struct Color {
 
 impl Color {
     // --------- Constructor ---------
-    pub fn from_hex(hex: &str) -> Color {
-        return Self::hex_to_color(hex);
-    }
-
     pub fn from_rgba(r: u8, g: u8, b: u8, a: u8) -> Color {
         return Color { r, g, b, a };
     }
 
+    pub fn from_hex(hex: &str) -> Color {
+        return Self::hex_to_color(hex);
+    }
+
     // --------- Instance Methods ---------
+
     pub fn to_hex(&self) -> String {
         return Self::color_to_hex(self);
     }
 
     // --------- Helper Functions ---------
+
     pub fn hex_to_color(hex: &str) -> Color {
+        let raw_color: u32 = Self::hex_to_raw(hex);
+        return Self::raw_to_color(raw_color);
+    }
+
+    pub fn hex_to_raw(hex: &str) -> u32 {
         // Return black if hex is empty (bruv)
         if hex.is_empty() {
-            return Self::from_rgba(0, 0, 0, 255);
+            return 0x000000FF;
         }
 
         // Remove '#' to get the actual hex value
@@ -51,27 +58,24 @@ impl Color {
             hex_value.push_str("FF");
         } else {
             // Invalid length, return black
-            return Self::from_rgba(0, 0, 0, 255);
+            return 0x000000FF;
         }
 
-        // Parse the correctly formated hex to rgba 32-bit integer
-        let color_u32_rgba: u32 = match u32::from_str_radix(&hex_value, 16) {
+        // Parse hex to 32-bit raw color and return it
+        return match u32::from_str_radix(&hex_value, 16) {
             Ok(val) => val,
             Err(_) => {
                 // Parse failed, return black
-                return Self::from_rgba(0, 0, 0, 255);
+                return 0x000000FF;
             }
         };
-
-        // Unpack individual RGBA channels and return them
-        return Self::raw_to_color(color_u32_rgba);
     }
 
-    pub fn raw_to_color(rgba: u32) -> Color {
-        let r: u8 = ((rgba >> 24) & 0xFF) as u8;
-        let g: u8 = ((rgba >> 16) & 0xFF) as u8;
-        let b: u8 = ((rgba >> 08) & 0xFF) as u8;
-        let a: u8 = ((rgba >> 00) & 0xFF) as u8;
+    pub fn raw_to_color(raw: u32) -> Color {
+        let r: u8 = ((raw >> 24) & 0xFF) as u8;
+        let g: u8 = ((raw >> 16) & 0xFF) as u8;
+        let b: u8 = ((raw >> 08) & 0xFF) as u8;
+        let a: u8 = ((raw >> 00) & 0xFF) as u8;
         return Self::from_rgba(r, g, b, a);
     }
 
@@ -82,10 +86,7 @@ impl Color {
 
     pub fn color_to_raw(color: &Color) -> u32 {
         // Pack and return RGBA channels into raw u32 format
-        return ((color.r as u32) << 24)
-            | ((color.g as u32) << 16)
-            | ((color.b as u32) << 08)
-            | ((color.a as u32) << 00);
+        return ((color.r as u32) << 24) | ((color.g as u32) << 16) | ((color.b as u32) << 08) | ((color.a as u32) << 00);
     }
 
     pub fn lerp_color(color_a: &Color, color_b: &Color, t: f32) -> Color {

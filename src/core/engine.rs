@@ -1,7 +1,8 @@
 use crate::io::native_renderer::NativeRenderer;
 use crate::io::renderer_interface::RendererInterface;
+use crate::structs::color::Color;
 use crate::structs::input_state::InputState;
-use crate::structs::math::{Offset2, Vector2};
+use crate::structs::utils::{Offset2, Pixel, Vector2};
 use crate::structs::{grid::Grid, particle::Particle};
 
 use rand::seq::SliceRandom;
@@ -11,6 +12,9 @@ pub struct Engine {
     pub game_width: usize,
     pub game_height: usize,
     pub current_grid: Grid,
+
+    pub brush_radius: i32,
+    pub selected_particle_id: u16,
 }
 
 impl Engine {
@@ -19,6 +23,9 @@ impl Engine {
             game_width,
             game_height,
             current_grid: Grid::new(game_width as u16, game_height as u16),
+
+            brush_radius: 8,
+            selected_particle_id: 300,
         };
 
         // Populate the grid with empty particles
@@ -42,29 +49,35 @@ impl Engine {
         renderer.queue_particles(&self.current_grid.data);
     }
 
-    pub fn handle_input(&mut self, input_state: &InputState) {
-        // ! Todo: move these in the engine eventually
-        let brush_radius: i32 = 8;
-        let selected_particle_id: u16 = 300;
-
+    fn handle_input(&mut self, input_state: &InputState) {
         // Paint or erase particles
         if input_state.mouse_left_down || input_state.mouse_right_down {
             let pos: &Vector2<f64> = &input_state.mouse_position;
 
-            let mut particle_id: u16 = selected_particle_id;
+            let mut particle_id: u16 = self.selected_particle_id;
             if input_state.mouse_right_down {
                 particle_id = 0; // We are erasing
             }
 
             if pos.x >= 0.0 && pos.x < self.game_width as f64 && pos.y >= 0.0 && pos.y < self.game_height as f64 {
                 self.current_grid
-                    .fill_circle_at(pos.x as i32, pos.y as i32, brush_radius, particle_id);
+                    .fill_circle_at(pos.x as i32, pos.y as i32, self.brush_radius, particle_id);
             }
         }
     }
 
-    pub fn step_physics(&mut self) {
-        let mut particles_to_update: Vec<Particle> = self.current_grid.data.clone();
+    fn step_physics(&mut self) {
+        // Collect and clone only the dirty particles
+        let mut particles_to_update: Vec<Particle> = Vec::with_capacity(self.current_grid.dirty_particles.len());
+
+        for &index in &self.current_grid.dirty_particles {
+            if let Some(particle) = self.current_grid.data.get(index as usize) {
+                particles_to_update.push(particle.clone());
+            }
+        }
+
+        // Clear dirty particle set for the next frame
+        self.current_grid.dirty_particles.clear();
 
         // Shuffle to randomize horizontal order
         let mut rng = thread_rng();
@@ -75,19 +88,19 @@ impl Engine {
 
         for particle in particles_to_update {
             match particle.category {
-                4 => self.handle_sands(&particle),
+                4 => self.handle_sands(particle.index as usize),
                 _ => {}
             }
         }
     }
 
-    fn handle_sands(&mut self, particle: &Particle) {
+    fn handle_sands(&mut self, particle_index: usize) {
         let direction_groups: Vec<Vec<Offset2<i32>>> = vec![
             vec![Offset2::<i32> { dx: 0, dy: -1 }],
             vec![Offset2::<i32> { dx: 1, dy: -1 }, Offset2::<i32> { dx: -1, dy: -1 }],
         ];
 
         self.current_grid
-            .try_move_particle(particle.index as usize, &direction_groups, true, true);
+            .try_move_particle(particle_index, &direction_groups, true, true, true);
     }
 }

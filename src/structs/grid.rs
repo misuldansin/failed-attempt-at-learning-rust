@@ -1,7 +1,7 @@
 use crate::loader::load_particle_data;
-use crate::structs::math::{Offset2, Vector2};
 use crate::structs::particle::Particle;
 use crate::structs::particle_data::ParticleData;
+use crate::structs::utils::{Offset2, Vector2};
 use std::collections::HashMap;
 use std::collections::HashSet;
 
@@ -14,8 +14,9 @@ pub struct Grid {
     pub width: i32,
     pub height: i32,
     pub data: Vec<Particle>,
-    particle_data_map: HashMap<u16, ParticleData>,
     pub dirty_particles: HashSet<u32>,
+
+    particle_data_map: HashMap<u16, ParticleData>,
 }
 
 impl Grid {
@@ -30,8 +31,9 @@ impl Grid {
             width: width as i32,
             height: height as i32,
             data: data,
-            particle_data_map: particle_data_map,
             dirty_particles: HashSet::<u32>::new(),
+
+            particle_data_map: particle_data_map,
         };
     }
 
@@ -78,14 +80,7 @@ impl Grid {
 
     // --------- Methods ---------
 
-    pub fn create_particle_at(
-        &mut self,
-        x: i32,
-        y: i32,
-        particle_id: u16,
-        mark_dirty: bool,
-        mark_neighbors_dirty: bool,
-    ) -> bool {
+    pub fn create_particle_at(&mut self, x: i32, y: i32, particle_id: u16, mark_dirty: bool, mark_neighbors_dirty: bool) -> bool {
         // x and y axis are out of bounds, return
         if !(self.is_in_bounds(x, y)) {
             return false;
@@ -147,6 +142,7 @@ impl Grid {
         &mut self,
         particle_index: usize,
         direction_groups: &[Vec<Offset2<i32>>],
+        bump_them_nerds: bool,
         mark_dirty: bool,
         mark_neighbors_dirty: bool,
     ) -> bool {
@@ -158,7 +154,15 @@ impl Grid {
             randomise_directions.shuffle(&mut rng);
 
             for direction in randomise_directions {
-                let tx: i32 = particle.position.x + direction.dx;
+                // add random 'bumps' in the x axis
+                let mut final_dx: i32 = direction.dx;
+                if bump_them_nerds {
+                    if random::<f32>() > 0.5 {
+                        final_dx = -direction.dx;
+                    }
+                }
+
+                let tx: i32 = particle.position.x + final_dx;
                 let ty: i32 = particle.position.y + direction.dy;
 
                 // Target location is out of bounds, skip this target
