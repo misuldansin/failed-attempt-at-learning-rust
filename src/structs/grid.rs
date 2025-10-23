@@ -137,7 +137,6 @@ impl Grid {
 
         return neighbors;
     }
-
     pub fn try_move_particle(
         &mut self,
         particle_index: usize,
@@ -146,34 +145,29 @@ impl Grid {
         mark_dirty: bool,
         mark_neighbors_dirty: bool,
     ) -> bool {
-        let particle: Particle = self.data[particle_index].clone();
+        let current_position = self.data[particle_index].position;
+        let current_density = self.data[particle_index].density;
+        let width = self.width;
 
         for directions in direction_groups {
-            let mut rng: ThreadRng = rand::thread_rng();
-            let mut randomise_directions: Vec<Offset2<i32>> = directions.clone();
-            randomise_directions.shuffle(&mut rng);
-
-            for direction in randomise_directions {
-                // add random 'bumps' in the x axis
+            for direction in directions {
+                // Add random 'bumps' in the x axis
                 let mut final_dx: i32 = direction.dx;
                 if bump_them_nerds {
-                    if random::<f32>() > 0.5 {
+                    if rand::random::<f32>() > 0.5 {
                         final_dx = -direction.dx;
                     }
                 }
 
-                let tx: i32 = particle.position.x + final_dx;
-                let ty: i32 = particle.position.y + direction.dy;
+                let tx: i32 = current_position.x + final_dx;
+                let ty: i32 = current_position.y + direction.dy;
 
-                // Target location is out of bounds, skip this target
                 if !self.is_in_bounds(tx, ty) {
                     continue;
                 }
 
-                // Get target particle index
-                let target_index: usize = (ty * self.width + tx) as usize;
+                let target_index: usize = (ty * width + tx) as usize;
 
-                // Target location and this particle location are same, skip this target
                 if particle_index == target_index {
                     continue;
                 }
@@ -187,11 +181,8 @@ impl Grid {
                         (&mut b[0], &mut a[target_index])
                     };
 
-                    // If target particle is movable and has lower density than the current particle..
-                    // ..swap their location in grid data
-                    if b.is_movable && a.density > b.density {
+                    if b.is_movable && current_density > b.density {
                         std::mem::swap(a, b);
-
                         let temp_pos = a.position;
                         a.position = b.position;
                         b.position = temp_pos;
@@ -209,7 +200,7 @@ impl Grid {
                 if moved {
                     if mark_dirty {
                         self.mark_particle_dirty(tx, ty, mark_neighbors_dirty);
-                        self.mark_particle_dirty(particle.position.x, particle.position.y, mark_neighbors_dirty);
+                        self.mark_particle_dirty(current_position.x, current_position.y, mark_neighbors_dirty);
                     }
                     return true;
                 }

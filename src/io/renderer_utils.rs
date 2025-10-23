@@ -189,80 +189,80 @@ pub fn create_base_render_group(width: u32, height: u32, device: &wgpu::Device, 
     };
 }
 
-pub fn create_brush_render_group(device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> RenderGroup {
-    let shader: wgpu::ShaderModule = device.create_shader_module(wgpu::include_wgsl!("../shaders/brush_indicator.wgsl"));
+// pub fn create_brush_render_group(device: &wgpu::Device, surface_format: wgpu::TextureFormat) -> RenderGroup {
+//     let shader: wgpu::ShaderModule = device.create_shader_module(wgpu::include_wgsl!("../shaders/brush_indicator.wgsl"));
 
-    let initial_data = BrushUniform::new();
-    let brush_buffer: wgpu::Buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-        label: Some("Brush Uniform Buffer"),
-        contents: bytemuck::cast_slice(&[initial_data]),
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-    });
+//     let initial_data = BrushUniform::new();
+//     let brush_buffer: wgpu::Buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+//         label: Some("Brush Uniform Buffer"),
+//         contents: bytemuck::cast_slice(&[initial_data]),
+//         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
+//     });
 
-    let bind_group_layout: wgpu::BindGroupLayout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
-        label: Some("Brush Render Group Layout"),
-        entries: &[wgpu::BindGroupLayoutEntry {
-            binding: 0,
-            visibility: wgpu::ShaderStages::FRAGMENT,
-            ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
-                has_dynamic_offset: false,
-                min_binding_size: None,
-            },
-            count: None,
-        }],
-    });
+//     let bind_group_layout: wgpu::BindGroupLayout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+//         label: Some("Brush Render Group Layout"),
+//         entries: &[wgpu::BindGroupLayoutEntry {
+//             binding: 0,
+//             visibility: wgpu::ShaderStages::FRAGMENT,
+//             ty: wgpu::BindingType::Buffer {
+//                 ty: wgpu::BufferBindingType::Uniform,
+//                 has_dynamic_offset: false,
+//                 min_binding_size: None,
+//             },
+//             count: None,
+//         }],
+//     });
 
-    let bind_group: wgpu::BindGroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
-        label: Some("Brush Render Group Bind Group"),
-        layout: &bind_group_layout,
-        entries: &[wgpu::BindGroupEntry {
-            binding: 0,
-            resource: brush_buffer.as_binding(),
-        }],
-    });
+//     let bind_group: wgpu::BindGroup = device.create_bind_group(&wgpu::BindGroupDescriptor {
+//         label: Some("Brush Render Group Bind Group"),
+//         layout: &bind_group_layout,
+//         entries: &[wgpu::BindGroupEntry {
+//             binding: 0,
+//             resource: brush_buffer.as_binding(),
+//         }],
+//     });
 
-    let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        label: Some("Brush Render Group Pipeline Layout"),
-        bind_group_layouts: &[&bind_group_layout],
-        push_constant_ranges: &[],
-    });
+//     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+//         label: Some("Brush Render Group Pipeline Layout"),
+//         bind_group_layouts: &[&bind_group_layout],
+//         push_constant_ranges: &[],
+//     });
 
-    let pipeline: wgpu::RenderPipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Brush Render Group Pipeline"),
-        layout: Some(&pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: "vs_main",
-            buffers: &[],
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: "fs_main",
-            targets: &[Some(wgpu::ColorTargetState {
-                format: surface_format,
-                blend: Some(wgpu::BlendState::ALPHA_BLENDING),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-            compilation_options: wgpu::PipelineCompilationOptions::default(),
-        }),
-        primitive: wgpu::PrimitiveState::default(),
-        depth_stencil: None,
-        multisample: wgpu::MultisampleState::default(),
-        multiview: None,
-    });
+//     let pipeline: wgpu::RenderPipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+//         label: Some("Brush Render Group Pipeline"),
+//         layout: Some(&pipeline_layout),
+//         vertex: wgpu::VertexState {
+//             module: &shader,
+//             entry_point: "vs_main",
+//             buffers: &[],
+//             compilation_options: wgpu::PipelineCompilationOptions::default(),
+//         },
+//         fragment: Some(wgpu::FragmentState {
+//             module: &shader,
+//             entry_point: "fs_main",
+//             targets: &[Some(wgpu::ColorTargetState {
+//                 format: surface_format,
+//                 blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+//                 write_mask: wgpu::ColorWrites::ALL,
+//             })],
+//             compilation_options: wgpu::PipelineCompilationOptions::default(),
+//         }),
+//         primitive: wgpu::PrimitiveState::default(),
+//         depth_stencil: None,
+//         multisample: wgpu::MultisampleState::default(),
+//         multiview: None,
+//     });
 
-    return RenderGroup {
-        label: "Brush Render Group",
-        layers: vec![],
-        sampler: device.create_sampler(&wgpu::SamplerDescriptor::default()),
-        texture_extent: wgpu::Extent3d::ZERO,
-        bind_group: bind_group,
-        bind_group_layout: bind_group_layout,
-        pipeline: pipeline,
-    };
-}
+//     return RenderGroup {
+//         label: "Brush Render Group",
+//         layers: vec![],
+//         sampler: device.create_sampler(&wgpu::SamplerDescriptor::default()),
+//         texture_extent: wgpu::Extent3d::ZERO,
+//         bind_group: bind_group,
+//         bind_group_layout: bind_group_layout,
+//         pipeline: pipeline,
+//     };
+// }
 
 pub fn process_particles(particles: &[Particle], frame_buffer: &mut [u8], width: usize) {
     if particles.is_empty() {

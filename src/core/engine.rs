@@ -42,11 +42,22 @@ impl Engine {
         // Process input
         self.handle_input(input_state);
 
+        let mut particles_to_render: Vec<Particle> = Vec::with_capacity(self.current_grid.dirty_particles.len());
+
+        for &index in &self.current_grid.dirty_particles {
+            if let Some(particle) = self.current_grid.data.get(index as usize) {
+                particles_to_render.push(particle.clone());
+            }
+        }
+
+        // Clear dirty particle set for the next frame
+        self.current_grid.dirty_particles.clear();
+
         // Update particle physics
-        self.step_physics();
+        self.step_physics(&mut particles_to_render);
 
         // Queue dirty particles
-        renderer.queue_particles(&self.current_grid.data);
+        renderer.queue_particles(&particles_to_render);
     }
 
     fn handle_input(&mut self, input_state: &InputState) {
@@ -66,19 +77,7 @@ impl Engine {
         }
     }
 
-    fn step_physics(&mut self) {
-        // Collect and clone only the dirty particles
-        let mut particles_to_update: Vec<Particle> = Vec::with_capacity(self.current_grid.dirty_particles.len());
-
-        for &index in &self.current_grid.dirty_particles {
-            if let Some(particle) = self.current_grid.data.get(index as usize) {
-                particles_to_update.push(particle.clone());
-            }
-        }
-
-        // Clear dirty particle set for the next frame
-        self.current_grid.dirty_particles.clear();
-
+    fn step_physics(&mut self, particles_to_update: &mut Vec<Particle>) {
         // Shuffle to randomize horizontal order
         let mut rng = thread_rng();
         particles_to_update.shuffle(&mut rng);
